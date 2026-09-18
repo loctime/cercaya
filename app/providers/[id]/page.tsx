@@ -42,7 +42,12 @@ export default async function ProviderProfilePage({ params }: Props) {
     : null
 
   const contactPhone = profile.whatsapp_link || profile.phone || ''
-  const categories = services?.flatMap(s => (s.categories ? [s.categories] : [])) as Array<{ id: number; name: string; icon: string }>
+  type CategoryRow = { id: number; name: string; icon: string }
+  const categories: CategoryRow[] = (services ?? []).flatMap(s => {
+    const cat = s.categories as CategoryRow | CategoryRow[] | null
+    if (!cat) return []
+    return Array.isArray(cat) ? cat : [cat]
+  })
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
@@ -97,7 +102,7 @@ export default async function ProviderProfilePage({ params }: Props) {
         <h2 className="text-lg font-semibold mb-4">Reseñas ({reviews?.length ?? 0})</h2>
         {reviews && reviews.length > 0 ? (
           <div className="flex flex-col gap-4">
-            {(reviews as Array<{ id: string; rating: number; comment: string | null; client: { full_name: string } | null }>).map(r => (
+            {(reviews as unknown as Array<{ id: string; rating: number; comment: string | null; client: { full_name: string } | null }>).map(r => (
               <div key={r.id} className="border-b last:border-0 pb-4 last:pb-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-sm">{r.client?.full_name ?? 'Cliente'}</span>

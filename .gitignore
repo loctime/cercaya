@@ -45,3 +45,4 @@ next-env.d.ts
 
 # Memoria local de Claude (no commitear)
 CLAUDE.local.md
+.tmp/

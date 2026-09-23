@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest"
+    "test": "jest",
+    "test:db": "node --test tests/db/v2.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -20,6 +21,7 @@
     "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",

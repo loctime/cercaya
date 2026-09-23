@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ACTUALIZADO, EMAIL_CONTACTO } from '@/lib/sitio'
+import { ACTUALIZADO, EMAIL_CONTACTO, RESPONSABLE } from '@/lib/sitio'
 
 export const metadata: Metadata = {
   title: 'Términos y condiciones',
@@ -14,7 +14,8 @@ export default function Terminos() {
       <p className="text-sm text-texto2">Última actualización: {ACTUALIZADO}</p>
 
       <p>
-        Al crear una cuenta o usar CercaYa aceptás estos términos. Si no estás de acuerdo, no uses la app.
+        CercaYa es un servicio de <strong>{RESPONSABLE}</strong> (Ramallo, provincia de Buenos Aires, Argentina). Al crear
+        una cuenta o usar CercaYa aceptás estos términos. Si no estás de acuerdo, no uses la app.
       </p>
 
       <h2>Qué es CercaYa</h2>

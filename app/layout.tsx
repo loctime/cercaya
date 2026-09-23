@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <footer className="border-t border-borde bg-grupo">
           <div className="max-w-4xl mx-auto px-5 py-8 flex flex-col sm:flex-row gap-4 justify-between text-sm text-texto2">
-            <p>© {new Date().getFullYear()} CercaYa · Ramallo, Buenos Aires</p>
+            <p>© {new Date().getFullYear()} CercaYa, un servicio de ControlApps · Ramallo, Buenos Aires</p>
             <nav className="flex flex-wrap gap-x-5 gap-y-2">
               <Link href="/soporte" className="hover:text-tinta">Ayuda y soporte</Link>
               <Link href="/terminos" className="hover:text-tinta">Términos</Link>

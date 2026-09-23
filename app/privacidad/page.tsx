@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ACTUALIZADO, EMAIL_CONTACTO } from '@/lib/sitio'
+import { ACTUALIZADO, EMAIL_CONTACTO, RESPONSABLE } from '@/lib/sitio'
 
 export const metadata: Metadata = {
   title: 'Política de privacidad',
@@ -17,6 +17,13 @@ export default function Privacidad() {
         CercaYa es una app para encontrar y contactar prestadores de servicios en Ramallo y zona. Esta política explica qué
         datos guardamos, para qué, con quién los compartimos y cómo podés pedir que los borremos. Cumplimos con la Ley
         25.326 de Protección de Datos Personales de la República Argentina.
+      </p>
+
+      <h2>Quién es responsable de tus datos</h2>
+      <p>
+        CercaYa es un servicio de <strong>{RESPONSABLE}</strong>, con domicilio en Ramallo, provincia de Buenos Aires,
+        Argentina, que es responsable del tratamiento de tus datos. Contacto:{' '}
+        <a href={`mailto:${EMAIL_CONTACTO}`}>{EMAIL_CONTACTO}</a>.
       </p>
 
       <h2>Qué datos guardamos</h2>

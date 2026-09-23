@@ -1,4 +1,5 @@
 import { router } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/react-navigation'
 import { ImagePlus, MapPin, X } from 'lucide-react-native'
 import { useState } from 'react'
 import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
@@ -17,6 +18,7 @@ const PASOS = ['Qué necesitás', 'Contanos más', 'Dónde y cuándo'] as const
 
 export default function Publicar() {
   const insets = useSafeAreaInsets()
+  const alturaHeader = useHeaderHeight()
   const { sesion } = useSesion()
   const { origen } = useUbicacion()
   const categorias = useCategorias()
@@ -30,10 +32,25 @@ export default function Publicar() {
   const [error, setError] = useState('')
   const [publicando, setPublicando] = useState(false)
 
-  const puedeSeguir =
-    (paso === 0 && categoria != null) ||
-    (paso === 1 && titulo.trim().length >= 3 && descripcion.trim().length >= 10) ||
-    (paso === 2 && urgencia != null)
+  // Que falta para avanzar (null = nada). El boton nunca queda muerto:
+  // si falta algo, al tocarlo se explica que.
+  const falta =
+    paso === 0 && categoria == null
+      ? 'Elegí qué necesitás.'
+      : paso === 1 && titulo.trim().length < 3
+        ? 'Escribí un título corto (al menos 3 letras).'
+        : paso === 1 && descripcion.trim().length < 10
+          ? 'Contá un poco más en la descripción (al menos 10 letras).'
+          : paso === 2 && urgencia == null
+            ? 'Elegí para cuándo lo necesitás.'
+            : null
+
+  function avanzar() {
+    if (falta) return setError(falta)
+    setError('')
+    if (paso < 2) setPaso(paso + 1)
+    else publicar()
+  }
 
   async function sumarFotos() {
     const nuevas = await elegirFotos(3 - fotos.length)
@@ -69,7 +86,11 @@ export default function Publicar() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? alturaHeader : 0}
+    >
       <View style={estilos.progreso}>
         {PASOS.map((p, i) => (
           <View key={p} style={[estilos.barrita, i <= paso && { backgroundColor: colores.naranja }]} />
@@ -120,6 +141,11 @@ export default function Publicar() {
               maxLength={2000}
               style={{ minHeight: 120, textAlignVertical: 'top', paddingTop: espacio.m }}
             />
+            {descripcion.trim().length < 10 && (
+              <Texto suave style={{ fontSize: 13, marginTop: -espacio.s }}>
+                Mínimo 10 letras ({descripcion.trim().length}/10)
+              </Texto>
+            )}
             <Texto fuerte style={{ fontSize: 14 }}>Fotos (opcional, hasta 3)</Texto>
             <View style={estilos.fotos}>
               {fotos.map((f, i) => (
@@ -187,24 +213,29 @@ export default function Publicar() {
           </>
         )}
 
-        {error ? <Texto style={{ color: colores.peligro }}>{error}</Texto> : null}
       </ScrollView>
 
+      {error ? (
+        <View style={estilos.aviso} accessibilityLiveRegion="polite">
+          <Texto style={{ color: colores.peligro, fontSize: 14 }}>{error}</Texto>
+        </View>
+      ) : null}
       <View style={[estilos.acciones, { paddingBottom: insets.bottom + espacio.m }]}>
         {paso > 0 && (
-          <Boton variante="secundario" onPress={() => setPaso(paso - 1)} style={{ flex: 1 }}>
+          <Boton
+            variante="secundario"
+            onPress={() => {
+              setError('')
+              setPaso(paso - 1)
+            }}
+            style={{ flex: 1 }}
+          >
             Atrás
           </Boton>
         )}
-        {paso < 2 ? (
-          <Boton onPress={() => setPaso(paso + 1)} deshabilitado={!puedeSeguir} style={{ flex: 2 }}>
-            Siguiente
-          </Boton>
-        ) : (
-          <Boton onPress={publicar} deshabilitado={!puedeSeguir} cargando={publicando} style={{ flex: 2 }}>
-            Publicar pedido
-          </Boton>
-        )}
+        <Boton onPress={avanzar} cargando={publicando} style={{ flex: 2 }}>
+          {paso < 2 ? 'Siguiente' : 'Publicar pedido'}
+        </Boton>
       </View>
     </KeyboardAvoidingView>
   )
@@ -258,6 +289,13 @@ const estilos = StyleSheet.create({
     borderColor: colores.borde,
   },
   fila: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
+  aviso: {
+    paddingHorizontal: espacio.xl,
+    paddingVertical: espacio.s,
+    backgroundColor: '#FEF2F2',
+    borderTopWidth: 1,
+    borderTopColor: colores.borde,
+  },
   acciones: {
     flexDirection: 'row',
     gap: espacio.s,

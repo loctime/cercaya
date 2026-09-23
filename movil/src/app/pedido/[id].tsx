@@ -1,8 +1,19 @@
 import * as Location from 'expo-location'
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/react-navigation'
 import { BadgeCheck, CalendarDays, Clock, EllipsisVertical, MapPin, MessageCircle, Star } from 'lucide-react-native'
 import { useCallback, useState, type ReactNode } from 'react'
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '../../components/Avatar'
 import { EstadoBadge } from '../../components/Chip'
@@ -82,6 +93,7 @@ async function cargarDatos(id: string, yo: string): Promise<Datos | null> {
 export default function DetallePedido() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
+  const alturaHeader = useHeaderHeight()
   const { sesion } = useSesion()
   const categorias = useCategorias()
   const yo = sesion?.user.id ?? ''
@@ -300,7 +312,11 @@ export default function DetallePedido() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colores.fondo }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: colores.fondo }}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? alturaHeader : 0}
+    >
       <Stack.Screen
         options={{
           title: '',
@@ -446,7 +462,7 @@ export default function DetallePedido() {
       {acciones && (
         <View style={[estilos.barra, { paddingBottom: insets.bottom + espacio.m }]}>{acciones}</View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   )
 }
 

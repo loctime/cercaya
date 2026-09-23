@@ -1,4 +1,5 @@
 import { router } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/react-navigation'
 import { MailCheck } from 'lucide-react-native'
 import { useState } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
@@ -11,6 +12,7 @@ type Modo = 'entrar' | 'registro'
 // Login / registro diferido: se abre como modal cuando un invitado
 // intenta hacer algo que necesita cuenta.
 export default function Login() {
+  const alturaHeader = useHeaderHeight()
   const [modo, setModo] = useState<Modo>('entrar')
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
@@ -80,7 +82,11 @@ export default function Login() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? alturaHeader : 0}
+    >
       <ScrollView contentContainerStyle={estilos.contenido} keyboardShouldPersistTaps="handled">
         <Titulo>{modo === 'entrar' ? 'Iniciá sesión para continuar' : 'Creá tu cuenta'}</Titulo>
         <Texto suave>

@@ -113,12 +113,12 @@ export default function Mensajes() {
                   <Texto style={estilos.nombre} numberOfLines={1}>
                     {c.otro_nombre}
                   </Texto>
-                  <Texto suave style={[{ fontSize: 12 }, noLeidos > 0 && { color: colores.naranjaOscuro }]}>
+                  <Texto suave style={[{ fontSize: 13 }, noLeidos > 0 && { color: colores.naranjaOscuro }]}>
                     {cuando(c.ultimo_at)}
                   </Texto>
                 </View>
                 {c.job_title ? (
-                  <Texto suave numberOfLines={1} style={{ fontSize: 13 }}>
+                  <Texto suave numberOfLines={1} style={{ fontSize: 14 }}>
                     {c.job_title}
                   </Texto>
                 ) : null}

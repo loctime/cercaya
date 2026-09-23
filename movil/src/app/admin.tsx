@@ -120,7 +120,7 @@ export default function Admin() {
             <Texto fuerte>
               {MOTIVOS_DENUNCIA.find((m) => m.valor === d.reason)?.texto ?? d.reason} · {d.target_type}
             </Texto>
-            <Texto suave style={{ fontSize: 13 }}>{fecha(d.created_at)}</Texto>
+            <Texto suave style={{ fontSize: 14 }}>{fecha(d.created_at)}</Texto>
             {d.detail ? <Texto>"{d.detail}"</Texto> : null}
             {d.target_type === 'perfil' && (
               <Pressable onPress={() => router.push({ pathname: '/prestador/[id]', params: { id: d.target_id } })}>
@@ -149,7 +149,7 @@ export default function Admin() {
               <Avatar nombre={p.perfil?.full_name ?? '?'} url={p.perfil?.avatar_url} tam={48} />
               <View style={{ flex: 1 }}>
                 <Titulo nivel={3}>{p.perfil?.full_name}</Titulo>
-                <Texto suave style={{ fontSize: 13 }}>
+                <Texto suave style={{ fontSize: 14 }}>
                   {[p.perfil?.zone_label, `desde ${fecha(p.created_at)}`].filter(Boolean).join(' · ')}
                 </Texto>
               </View>

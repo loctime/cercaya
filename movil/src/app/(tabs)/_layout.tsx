@@ -34,7 +34,7 @@ export default function TabsLayout() {
         header: () => <TopBar />,
         tabBarActiveTintColor: colores.naranjaOscuro,
         tabBarInactiveTintColor: colores.texto2,
-        tabBarLabelStyle: { fontFamily: fuentes.textoMedio, fontSize: 11 },
+        tabBarLabelStyle: { fontFamily: fuentes.textoMedio, fontSize: 12 },
         tabBarStyle: { borderTopColor: colores.borde, paddingTop: 4 },
       }}
     >

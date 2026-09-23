@@ -87,7 +87,7 @@ export default function EditarPerfil() {
             keyboardType="phone-pad"
             autoComplete="tel"
           />
-          <Texto suave style={{ fontSize: 13 }}>
+          <Texto suave style={{ fontSize: 14 }}>
             No se muestra a nadie salvo que lo actives en Privacidad o lo compartas en un chat.
           </Texto>
         </View>

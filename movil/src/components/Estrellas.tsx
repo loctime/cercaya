@@ -9,13 +9,13 @@ const AMARILLO = '#F59E0B'
 export function Calificacion({ promedio, cantidad }: { promedio: number | string | null; cantidad: number | string }) {
   const n = Number(cantidad)
   if (!n || promedio == null) {
-    return <Texto suave style={{ fontSize: 13 }}>Sin reseñas todavía</Texto>
+    return <Texto suave style={{ fontSize: 14 }}>Sin reseñas todavía</Texto>
   }
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.xs }}>
       <Star size={15} color={AMARILLO} fill={AMARILLO} />
       <Texto fuerte style={{ fontSize: 14 }}>{Number(promedio).toLocaleString('es-AR')}</Texto>
-      <Texto suave style={{ fontSize: 13 }}>
+      <Texto suave style={{ fontSize: 14 }}>
         ({n} {n === 1 ? 'reseña' : 'reseñas'})
       </Texto>
     </View>

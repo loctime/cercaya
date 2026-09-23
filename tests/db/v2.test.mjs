@@ -87,6 +87,15 @@ test('telefono: solo logueados, visible, cerca y sin bloqueo', async () => {
   assert.equal((await c(lejano)).motivo, 'lejos')
   assert.equal((await c(sinUbi)).motivo, 'sin_ubicacion')
 
+  // El boton que muestra la app coincide con lo que el servidor va a responder
+  const boton = (u) => db.como(u, (d) => d.uno('select perfil_prestador($1) as p', [p])).then((x) => x.p.contacto)
+  assert.equal(await boton(vecino), 'whatsapp')
+  assert.equal(await boton(lejano), 'chat', 'lejos: sin boton de WhatsApp que despues falla')
+  assert.equal(await boton(sinUbi), 'chat', 'sin ubicacion: directo al chat')
+  assert.equal(await boton(null), 'whatsapp', 'invitado cerca: ve WhatsApp y al tocar se le pide entrar')
+  const lista = await db.como(sinUbi, (d) => d.uno('select contacto from buscar_prestadores() where user_id = $1', [p]))
+  assert.equal(lista.contacto, 'chat', 'la lista usa la misma regla')
+
   await db.sql('update profile_private set phone_radius_km = 100 where user_id = $1', [p])
   assert.equal((await c(lejano)).ok, true, 'el duenio puede ampliar el radio')
 
@@ -159,7 +168,9 @@ test('ciclo completo del pedido, chat y resenas', async () => {
   const perfil = (await db.como(null, (d) => d.uno('select perfil_prestador($1) as p', [plomero]))).p
   assert.equal(perfil.trabajos_realizados, 1)
   assert.equal(Number(perfil.calificacion), 5)
-  assert.equal(perfil.contactos_recibidos, 0, "el chat lo abrio el prestador: no cuenta como contacto recibido")
+  assert.equal(perfil.contactos_recibidos, null, "los contactos recibidos no son publicos")
+  const propio = (await db.como(plomero, (d) => d.uno('select perfil_prestador($1) as p', [plomero]))).p
+  assert.equal(propio.contactos_recibidos, 0, "el chat lo abrio el prestador: no cuenta como contacto recibido")
 })
 
 test('trabajo verificado: llego cerca y se quedo 10 minutos', async () => {

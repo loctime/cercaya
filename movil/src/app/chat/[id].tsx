@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { useHeaderHeight } from 'expo-router/react-navigation'
-import { ClipboardList, EllipsisVertical, Phone, SendHorizontal } from 'lucide-react-native'
+import { ClipboardList, EllipsisVertical, SendHorizontal } from 'lucide-react-native'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
@@ -178,6 +178,7 @@ export default function Chat() {
   }
 
   const ultimoMioLeido = mensajes?.find((m) => m.sender_id === yo)
+  const yaCompartiMiContacto = !!mensajes?.some((m) => m.kind === 'contacto' && m.sender_id === yo)
 
   return (
     <KeyboardAvoidingView
@@ -249,15 +250,18 @@ export default function Chat() {
         />
       )}
 
-      <View style={[estilos.composer, { paddingBottom: insets.bottom + espacio.s }]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Compartir mi contacto"
-          onPress={compartirContacto}
-          style={estilos.botonRedondo}
-        >
-          <Phone size={22} color={colores.naranjaOscuro} />
-        </Pressable>
+      <View style={[estilos.pie, { paddingBottom: insets.bottom + espacio.s }]}>
+        {!yaCompartiMiContacto && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={compartirContacto}
+            style={({ pressed }) => [estilos.compartir, pressed && { opacity: 0.7 }]}
+          >
+            <IconoWhatsApp size={18} color={colores.tinta} />
+            <Texto fuerte style={{ fontSize: 14 }}>Compartir mi WhatsApp</Texto>
+          </Pressable>
+        )}
+        <View style={estilos.composer}>
         <TextInput
           ref={input}
           value={texto}
@@ -278,6 +282,7 @@ export default function Chat() {
         >
           {enviando ? <ActivityIndicator color={colores.tinta} /> : <SendHorizontal size={22} color={colores.tinta} />}
         </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   )
@@ -287,7 +292,7 @@ function Burbuja({ m, mio, otroNombre, onWhatsApp }: { m: Mensaje; mio: boolean;
   if (m.kind === 'sistema') {
     return (
       <View style={estilos.sistema}>
-        <Texto suave style={{ fontSize: 13, textAlign: 'center' }}>
+        <Texto suave style={{ fontSize: 14, textAlign: 'center' }}>
           {m.body} · {hora(m.created_at)}
         </Texto>
       </View>
@@ -327,7 +332,7 @@ const estilos = StyleSheet.create({
   dia: {
     alignSelf: 'center',
     marginVertical: espacio.s,
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: fuentes.textoFuerte,
     color: colores.texto2,
   },
@@ -335,7 +340,7 @@ const estilos = StyleSheet.create({
   mia: { alignSelf: 'flex-end', backgroundColor: colores.naranjaSuave, borderBottomRightRadius: 4 },
   suya: { alignSelf: 'flex-start', backgroundColor: colores.grupo, borderBottomLeftRadius: 4 },
   tarjetaContacto: { gap: espacio.s, paddingVertical: espacio.m, minWidth: 230 },
-  horaBurbuja: { fontSize: 11, lineHeight: 14, alignSelf: 'flex-end' },
+  horaBurbuja: { fontSize: 12, lineHeight: 16, alignSelf: 'flex-end' },
   sistema: {
     alignSelf: 'center',
     paddingHorizontal: espacio.m,
@@ -344,10 +349,8 @@ const estilos = StyleSheet.create({
     borderRadius: radio.full,
     backgroundColor: colores.grupo,
   },
-  leido: { alignSelf: 'flex-end', fontSize: 11, color: colores.texto2, marginTop: 2 },
-  composer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+  leido: { alignSelf: 'flex-end', fontSize: 12, color: colores.texto2, marginTop: 2 },
+  pie: {
     gap: espacio.s,
     paddingHorizontal: espacio.m,
     paddingTop: espacio.s,
@@ -355,6 +358,17 @@ const estilos = StyleSheet.create({
     borderTopColor: colores.borde,
     backgroundColor: colores.fondo,
   },
+  compartir: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    minHeight: 40,
+    paddingHorizontal: espacio.m,
+    borderRadius: radio.full,
+    backgroundColor: colores.whatsapp,
+  },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: espacio.s },
   input: {
     flex: 1,
     minHeight: 44,

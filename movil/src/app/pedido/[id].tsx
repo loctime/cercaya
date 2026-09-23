@@ -207,19 +207,19 @@ export default function DetallePedido() {
     if (p.status === 'asignado' || p.status === 'realizado') {
       acciones = p.client_confirmed_at ? (
         <Texto suave style={{ textAlign: 'center' }}>
-          Confirmaste el trabajo. Falta que {datos.asignado?.full_name.split(' ')[0]} lo marque como realizado.
+          Confirmaste el trabajo. Falta que {datos.asignado?.full_name.split(' ')[0]} lo marque como terminado.
         </Texto>
       ) : (
         <Boton
           onPress={() =>
-            Alert.alert('Confirmar trabajo', 'Confirmás que el trabajo quedó bien y que el pago está acordado?', [
+            Alert.alert('Confirmar trabajo terminado', 'Confirmás que el trabajo quedó terminado y como lo acordaron?', [
               { text: 'Todavía no', style: 'cancel' },
               { text: 'Confirmar', onPress: () => accion('confirmar', () => supabase.rpc('confirmar_trabajo', { p_job: id })) },
             ])
           }
           cargando={ocupado === 'confirmar'}
         >
-          Pago recibido / Trabajo conforme
+          Confirmar trabajo terminado
         </Boton>
       )
     }
@@ -238,14 +238,14 @@ export default function DetallePedido() {
           ) : null}
           <Boton
             onPress={() =>
-              Alert.alert('Trabajo realizado', 'Le avisamos al cliente para que confirme.', [
+              Alert.alert('Trabajo terminado', 'Le avisamos al cliente para que confirme.', [
                 { text: 'Volver', style: 'cancel' },
-                { text: 'Marcar realizado', onPress: () => accion('realizado', () => supabase.rpc('marcar_realizado', { p_job: id })) },
+                { text: 'Marcar terminado', onPress: () => accion('realizado', () => supabase.rpc('marcar_realizado', { p_job: id })) },
               ])
             }
             cargando={ocupado === 'realizado'}
           >
-            Marcar trabajo realizado
+            Marcar trabajo terminado
           </Boton>
         </View>
       )
@@ -343,7 +343,7 @@ export default function DetallePedido() {
               <Meta icono={<CalendarDays size={16} color={colores.texto2} />} texto={`Preferido: ${fecha(p.preferred_date + 'T12:00:00')}`} />
             )}
           </View>
-          <Texto suave style={{ fontSize: 13 }}>Publicado el {fecha(p.created_at)}</Texto>
+          <Texto suave style={{ fontSize: 14 }}>Publicado el {fecha(p.created_at)}</Texto>
         </View>
 
         {!esCliente && datos.cliente && (
@@ -420,7 +420,7 @@ export default function DetallePedido() {
                       <Avatar nombre={i.provider.full_name} url={i.provider.avatar_url} tam={44} />
                       <View style={{ flex: 1 }}>
                         <Texto fuerte>{i.provider.full_name}</Texto>
-                        <Texto suave style={{ fontSize: 13 }}>Ver perfil</Texto>
+                        <Texto suave style={{ fontSize: 14 }}>Ver perfil</Texto>
                       </View>
                     </Pressable>
                     {i.message ? <Texto>"{i.message}"</Texto> : null}

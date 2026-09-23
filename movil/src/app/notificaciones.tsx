@@ -62,7 +62,7 @@ export default function Notificaciones() {
             <View style={[estilos.fila, !item.read_at && { backgroundColor: colores.naranjaSuave }]}>
               <Texto fuerte>{item.title}</Texto>
               <Texto>{item.body}</Texto>
-              <Texto suave style={{ fontSize: 13 }}>{fecha(item.created_at)}</Texto>
+              <Texto suave style={{ fontSize: 14 }}>{fecha(item.created_at)}</Texto>
             </View>
           </View>
         )
@@ -82,7 +82,7 @@ export default function Notificaciones() {
 
 const estilos = StyleSheet.create({
   marcar: { alignSelf: 'flex-end', padding: espacio.l },
-  grupo: { paddingHorizontal: espacio.l, paddingTop: espacio.m, paddingBottom: espacio.xs, fontSize: 13 },
+  grupo: { paddingHorizontal: espacio.l, paddingTop: espacio.m, paddingBottom: espacio.xs, fontSize: 14 },
   fila: {
     paddingHorizontal: espacio.l,
     paddingVertical: espacio.m,

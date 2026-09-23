@@ -207,7 +207,7 @@ function Metrica({ valor, etiqueta }: { valor: string; etiqueta: string }) {
   return (
     <View style={estilos.metrica}>
       <Titulo nivel={3}>{valor}</Titulo>
-      <Texto suave style={{ fontSize: 12 }}>{etiqueta}</Texto>
+      <Texto suave style={{ fontSize: 14 }}>{etiqueta}</Texto>
     </View>
   )
 }
@@ -218,7 +218,7 @@ const estilos = StyleSheet.create({
   servicios: { gap: espacio.s, padding: espacio.l, borderRadius: radio.l, backgroundColor: colores.naranjaSuave },
   misServicios: { gap: espacio.s, padding: espacio.l, borderRadius: radio.l, borderWidth: 1, borderColor: colores.borde },
   badge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radio.full },
-  badgeTexto: { fontFamily: fuentes.textoFuerte, fontSize: 12 },
+  badgeTexto: { fontFamily: fuentes.textoFuerte, fontSize: 13 },
   metricas: { flexDirection: 'row', gap: espacio.s },
   metrica: { flex: 1, alignItems: 'center', paddingVertical: espacio.s, borderRadius: radio.m, backgroundColor: colores.grupo },
   menu: { borderRadius: radio.m, borderWidth: 1, borderColor: colores.borde, overflow: 'hidden' },

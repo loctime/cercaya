@@ -47,5 +47,5 @@ const estilos = StyleSheet.create({
   activo: { backgroundColor: colores.naranja, borderColor: colores.naranja },
   texto: { fontFamily: fuentes.textoFuerte, fontSize: 14, color: colores.tinta },
   badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: radio.full },
-  badgeTexto: { fontFamily: fuentes.textoFuerte, fontSize: 12 },
+  badgeTexto: { fontFamily: fuentes.textoFuerte, fontSize: 13 },
 })

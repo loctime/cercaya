@@ -82,7 +82,7 @@ export default function Privacidad() {
         <View style={estilos.fila}>
           <View style={{ flex: 1 }}>
             <Texto fuerte>Mostrar mi número</Texto>
-            <Texto suave style={{ fontSize: 13 }}>{datos.phone ?? 'Sin celular cargado'}</Texto>
+            <Texto suave style={{ fontSize: 14 }}>{datos.phone ?? 'Sin celular cargado'}</Texto>
           </View>
           <Switch
             value={datos.show_phone}

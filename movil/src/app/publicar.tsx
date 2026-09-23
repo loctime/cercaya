@@ -14,7 +14,19 @@ import { supabase } from '../lib/supabase'
 import { useUbicacion } from '../lib/ubicacion'
 import { colores, espacio, radio } from '../theme'
 
-const PASOS = ['Qué necesitás', 'Contanos más', 'Dónde y cuándo'] as const
+const PASOS = ['Qué necesitás', 'Contanos qué pasa', 'Dónde y cuándo'] as const
+
+// El titulo que se ve en las listas sale del comienzo del texto: una sola caja
+// para escribir es mas facil que pedir titulo y descripcion por separado.
+function tituloDesde(texto: string) {
+  const limpio = texto.trim().replace(/\s+/g, ' ')
+  const primera = limpio.split(/[.!?]/)[0].trim()
+  const base = primera.length >= 10 ? primera : limpio
+  if (base.length <= 60) return base
+  const corte = base.slice(0, 60)
+  const ultimo = corte.lastIndexOf(' ')
+  return (ultimo > 30 ? corte.slice(0, ultimo) : corte) + '...'
+}
 
 export default function Publicar() {
   const insets = useSafeAreaInsets()
@@ -24,7 +36,6 @@ export default function Publicar() {
   const categorias = useCategorias()
   const [paso, setPaso] = useState(0)
   const [categoria, setCategoria] = useState<number | null>(null)
-  const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [fotos, setFotos] = useState<FotoLocal[]>([])
   const [urgencia, setUrgencia] = useState<Urgencia | null>(null)
@@ -37,13 +48,11 @@ export default function Publicar() {
   const falta =
     paso === 0 && categoria == null
       ? 'Elegí qué necesitás.'
-      : paso === 1 && titulo.trim().length < 3
-        ? 'Escribí un título corto (al menos 3 letras).'
-        : paso === 1 && descripcion.trim().length < 10
-          ? 'Contá un poco más en la descripción (al menos 10 letras).'
-          : paso === 2 && urgencia == null
-            ? 'Elegí para cuándo lo necesitás.'
-            : null
+      : paso === 1 && (descripcion.trim().length < 10 || tituloDesde(descripcion).length < 3)
+        ? 'Contanos un poco más de lo que necesitás (una frase alcanza).'
+        : paso === 2 && urgencia == null
+          ? 'Elegí para cuándo lo necesitás.'
+          : null
 
   function avanzar() {
     if (falta) return setError(falta)
@@ -62,7 +71,7 @@ export default function Publicar() {
     setPublicando(true)
     const { data: jobId, error: e } = await supabase.rpc('publicar_pedido', {
       p_category: categoria!,
-      p_title: titulo.trim(),
+      p_title: tituloDesde(descripcion),
       p_description: descripcion.trim(),
       p_urgency: urgencia!,
       p_preferred_date: fecha,
@@ -126,26 +135,14 @@ export default function Publicar() {
         {paso === 1 && (
           <>
             <Campo
-              etiqueta="Título corto"
-              placeholder="Ej: La canilla de la cocina pierde"
-              value={titulo}
-              onChangeText={setTitulo}
-              maxLength={80}
-            />
-            <Campo
-              etiqueta="Descripción"
-              placeholder="Describí el problema o el arreglo con el mayor detalle posible."
+              etiqueta="Contanos qué arreglo o trabajo necesitás"
+              placeholder="Ej: Cortar el pasto del fondo y juntar las ramas"
               value={descripcion}
               onChangeText={setDescripcion}
               multiline
               maxLength={2000}
-              style={{ minHeight: 120, textAlignVertical: 'top', paddingTop: espacio.m }}
+              style={{ minHeight: 140, textAlignVertical: 'top', paddingTop: espacio.m }}
             />
-            {descripcion.trim().length < 10 && (
-              <Texto suave style={{ fontSize: 13, marginTop: -espacio.s }}>
-                Mínimo 10 letras ({descripcion.trim().length}/10)
-              </Texto>
-            )}
             <Texto fuerte style={{ fontSize: 14 }}>Fotos (opcional, hasta 3)</Texto>
             <View style={estilos.fotos}>
               {fotos.map((f, i) => (
@@ -163,7 +160,7 @@ export default function Publicar() {
               {fotos.length < 3 && (
                 <Pressable accessibilityRole="button" onPress={sumarFotos} style={[estilos.foto, estilos.sumarFoto]}>
                   <ImagePlus size={26} color={colores.texto2} />
-                  <Texto suave style={{ fontSize: 12 }}>Sumar</Texto>
+                  <Texto suave style={{ fontSize: 14 }}>Sumar</Texto>
                 </Pressable>
               )}
             </View>
@@ -184,7 +181,7 @@ export default function Publicar() {
                   Cambiar
                 </Texto>
               </Pressable>
-              <Texto suave style={{ fontSize: 13 }}>
+              <Texto suave style={{ fontSize: 14 }}>
                 Los prestadores solo ven la localidad y una distancia aproximada, nunca tu dirección.
               </Texto>
             </View>

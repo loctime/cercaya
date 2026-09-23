@@ -99,7 +99,7 @@ export function Campo({ etiqueta, error, ...props }: TextInputProps & { etiqueta
         {...props}
         style={[estilos.campo, error && { borderColor: colores.peligro }, props.style]}
       />
-      {error ? <Texto style={{ color: colores.peligro, fontSize: 13 }}>{error}</Texto> : null}
+      {error ? <Texto style={{ color: colores.peligro, fontSize: 14 }}>{error}</Texto> : null}
     </View>
   )
 }
@@ -147,7 +147,7 @@ const estilos = StyleSheet.create({
   campo: {
     minHeight: 50,
     borderWidth: 1.5,
-    borderColor: colores.borde,
+    borderColor: colores.bordeCampo,
     borderRadius: radio.m,
     paddingHorizontal: espacio.m,
     fontFamily: fuentes.texto,

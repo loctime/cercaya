@@ -27,7 +27,6 @@ type Ficha = {
   calificacion: number | null
   cant_resenas: number
   trabajos_realizados: number
-  contactos_recibidos: number
   contacto: 'whatsapp' | 'chat'
 }
 
@@ -177,7 +176,6 @@ export default function FichaPrestador() {
 
         <View style={estilos.metricas}>
           <Metrica valor={String(ficha.trabajos_realizados)} etiqueta="Trabajos realizados" />
-          <Metrica valor={String(ficha.contactos_recibidos)} etiqueta="Contactos recibidos" />
           <Metrica
             valor={ficha.calificacion != null ? `★ ${Number(ficha.calificacion).toLocaleString('es-AR')}` : '—'}
             etiqueta={`${ficha.cant_resenas} ${ficha.cant_resenas === 1 ? 'reseña' : 'reseñas'}`}
@@ -230,14 +228,14 @@ export default function FichaPrestador() {
               <View key={r.id} style={estilos.resena}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Texto fuerte>{r.reviewer?.full_name ?? 'Usuario eliminado'}</Texto>
-                  <Texto suave style={{ fontSize: 13 }}>{fecha(r.created_at)}</Texto>
+                  <Texto suave style={{ fontSize: 14 }}>{fecha(r.created_at)}</Texto>
                 </View>
                 <Estrellas valor={r.rating} />
                 {r.comment ? <Texto>{r.comment}</Texto> : null}
                 {r.trabajo_verificado && (
                   <View style={estilos.verificado}>
                     <BadgeCheck size={16} color={colores.exito} />
-                    <Texto style={{ fontSize: 13, color: colores.exito, fontFamily: fuentes.textoFuerte }}>
+                    <Texto style={{ fontSize: 14, color: colores.exito, fontFamily: fuentes.textoFuerte }}>
                       Trabajo verificado
                     </Texto>
                   </View>
@@ -254,30 +252,23 @@ export default function FichaPrestador() {
             Contactar
           </Boton>
         ) : ficha.contacto === 'whatsapp' ? (
-          <>
+          <View style={{ flex: 1, gap: espacio.xs }}>
             <Boton
               variante="whatsapp"
               adorno={<IconoWhatsApp size={20} />}
               onPress={whatsapp}
               cargando={ocupado === 'whatsapp'}
-              style={{ flex: 1 }}
             >
               Contactar por WhatsApp
             </Boton>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Enviar mensaje por el chat"
-              onPress={chat}
-              disabled={!!ocupado}
-              style={estilos.botonChat}
-            >
+            <Pressable accessibilityRole="button" onPress={chat} disabled={!!ocupado} hitSlop={6} style={estilos.linkChat}>
               {ocupado === 'chat' ? (
                 <ActivityIndicator color={colores.naranjaOscuro} />
               ) : (
-                <MessageCircle size={24} color={colores.naranjaOscuro} />
+                <Texto style={estilos.linkChatTexto}>o escribile por el chat de CercaYa</Texto>
               )}
             </Pressable>
-          </>
+          </View>
         ) : (
           <Boton icono={MessageCircle} onPress={chat} cargando={ocupado === 'chat'} style={{ flex: 1 }}>
             Enviar mensaje
@@ -312,7 +303,7 @@ function Metrica({ valor, etiqueta }: { valor: string; etiqueta: string }) {
   return (
     <View style={estilos.metrica}>
       <Titulo nivel={2}>{valor}</Titulo>
-      <Texto suave style={{ fontSize: 12, textAlign: 'center', lineHeight: 16 }}>
+      <Texto suave style={{ fontSize: 14, textAlign: 'center', lineHeight: 18 }}>
         {etiqueta}
       </Texto>
     </View>
@@ -356,15 +347,8 @@ const estilos = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colores.borde,
   },
-  botonChat: {
-    width: 52,
-    height: 52,
-    borderRadius: radio.m,
-    borderWidth: 1.5,
-    borderColor: colores.borde,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  linkChat: { minHeight: 36, alignItems: 'center', justifyContent: 'center' },
+  linkChatTexto: { fontSize: 15, color: colores.naranjaOscuro, textDecorationLine: 'underline' },
   visor: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
   cerrarVisor: { position: 'absolute', right: espacio.l, zIndex: 1, padding: espacio.s },
 })

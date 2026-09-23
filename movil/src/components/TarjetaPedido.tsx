@@ -38,12 +38,12 @@ export function TarjetaPedido({
       <View style={{ flex: 1, gap: 4 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.s }}>
           <EstadoBadge estado={p.status} />
-          <Texto suave style={{ fontSize: 13 }}>{fecha(p.created_at)}</Texto>
+          <Texto suave style={{ fontSize: 14 }}>{fecha(p.created_at)}</Texto>
         </View>
         <Texto style={estilos.titulo} numberOfLines={2}>
           {p.title}
         </Texto>
-        <Texto suave style={{ fontSize: 13 }}>
+        <Texto suave style={{ fontSize: 14 }}>
           {[cat?.name, p.zone_label, p.distancia_km != null ? textoDistancia(p.distancia_km) : null, textoUrgencia(p.urgency)]
             .filter(Boolean)
             .join(' · ')}
@@ -79,5 +79,5 @@ const estilos = StyleSheet.create({
     borderRadius: radio.s,
     backgroundColor: colores.naranjaSuave,
   },
-  accionTexto: { fontFamily: fuentes.textoFuerte, fontSize: 13, color: colores.naranjaOscuro },
+  accionTexto: { fontFamily: fuentes.textoFuerte, fontSize: 14, color: colores.naranjaOscuro },
 })

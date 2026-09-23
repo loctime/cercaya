@@ -29,10 +29,10 @@ export const CAMPOS_PEDIDO =
   'id, client_id, category_id, title, description, urgency, preferred_date, zone_label, status, assigned_provider_id, assigned_at, provider_done_at, client_confirmed_at, closed_at, created_at'
 
 export const ESTADOS: Record<EstadoPedido, { texto: string; fondo: string; tinta: string }> = {
-  abierto: { texto: 'Publicado', fondo: '#FFF1E5', tinta: '#9A3412' },
-  en_conversacion: { texto: 'En conversación', fondo: '#EFF6FF', tinta: '#1D4ED8' },
-  asignado: { texto: 'Asignado', fondo: '#F5F3FF', tinta: '#6D28D9' },
-  realizado: { texto: 'Realizado', fondo: '#ECFDF5', tinta: '#047857' },
+  abierto: { texto: 'Buscando prestadores', fondo: '#FFF1E5', tinta: '#9A3412' },
+  en_conversacion: { texto: 'En contacto', fondo: '#EFF6FF', tinta: '#1D4ED8' },
+  asignado: { texto: 'Trabajo acordado', fondo: '#F5F3FF', tinta: '#6D28D9' },
+  realizado: { texto: 'Trabajo terminado', fondo: '#ECFDF5', tinta: '#047857' },
   cerrado: { texto: 'Finalizado', fondo: '#F1F5F9', tinta: '#334155' },
   cancelado: { texto: 'Cancelado', fondo: '#FEF2F2', tinta: '#B91C1C' },
 }

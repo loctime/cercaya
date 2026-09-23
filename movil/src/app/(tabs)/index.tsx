@@ -68,7 +68,7 @@ export default function Inicio() {
             <TextInput
               value={texto}
               onChangeText={setTexto}
-              placeholder="Buscar plomero, pintor, corte de pasto..."
+              placeholder="Buscá un oficio o un nombre"
               placeholderTextColor={colores.texto2}
               returnKeyType="search"
               style={estilos.buscadorInput}
@@ -106,9 +106,9 @@ export default function Inicio() {
             <Titulo nivel={2}>{titulo}</Titulo>
             <View style={estilos.chips}>
               {rubro && (
-                <Pressable accessibilityRole="button" onPress={() => setFiltro(null)} style={[estilos.chip, estilos.chipActivo]}>
-                  <X size={14} color={colores.tinta} />
-                  <Texto style={estilos.chipTexto}>Quitar filtro</Texto>
+                <Pressable accessibilityRole="button" onPress={() => setFiltro(null)} style={[estilos.chip, estilos.chipQuitar]}>
+                  <X size={16} color={colores.blanco} />
+                  <Texto style={[estilos.chipTexto, { color: colores.blanco }]}>Quitar filtro</Texto>
                 </Pressable>
               )}
               {(
@@ -170,7 +170,7 @@ const estilos = StyleSheet.create({
     borderRadius: radio.m,
     backgroundColor: colores.grupo,
     borderWidth: 1.5,
-    borderColor: colores.borde,
+    borderColor: colores.bordeCampo,
   },
   buscadorInput: { flex: 1, fontFamily: fuentes.texto, fontSize: 16, color: colores.tinta, paddingVertical: espacio.s },
   grilla: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
@@ -187,7 +187,7 @@ const estilos = StyleSheet.create({
     borderColor: 'transparent',
   },
   categoriaActiva: { borderColor: colores.naranja },
-  categoriaTexto: { fontSize: 12, lineHeight: 15, textAlign: 'center' },
+  categoriaTexto: { fontSize: 13, lineHeight: 17, textAlign: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
   chip: {
     flexDirection: 'row',
@@ -200,5 +200,6 @@ const estilos = StyleSheet.create({
     borderColor: colores.borde,
   },
   chipActivo: { backgroundColor: colores.naranja, borderColor: colores.naranja },
+  chipQuitar: { minHeight: 44, backgroundColor: colores.tinta, borderColor: colores.tinta },
   chipTexto: { fontFamily: fuentes.textoFuerte, fontSize: 14, color: colores.tinta },
 })

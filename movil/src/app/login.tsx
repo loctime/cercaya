@@ -151,7 +151,7 @@ export default function Login() {
         </Boton>
 
         {modo === 'registro' && (
-          <Texto suave style={{ fontSize: 13, textAlign: 'center' }}>
+          <Texto suave style={{ fontSize: 14, textAlign: 'center' }}>
             Al crear la cuenta aceptás los{' '}
             <Texto style={estilos.link} onPress={() => abrirPagina('terminos')}>
               Términos
@@ -174,5 +174,5 @@ const estilos = StyleSheet.create({
   opcion: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radio.s },
   opcionActiva: { backgroundColor: colores.fondo, borderWidth: 1, borderColor: colores.borde },
   opcionTexto: { fontFamily: fuentes.textoFuerte, color: colores.texto2 },
-  link: { fontSize: 13, color: colores.naranjaOscuro, textDecorationLine: 'underline' },
+  link: { fontSize: 14, color: colores.naranjaOscuro, textDecorationLine: 'underline' },
 })

@@ -101,21 +101,21 @@ export default function AjustesNotificaciones() {
             Diste el permiso, pero no pudimos conectarnos con el servicio de notificaciones de Google. Revisá la conexión (y
             si usás VPN, apagala) y probá de nuevo.
           </Texto>
-          {errorRegistro ? <Texto style={{ fontSize: 12, color: colores.peligro }}>{errorRegistro}</Texto> : null}
+          {errorRegistro ? <Texto style={{ fontSize: 14, color: colores.peligro }}>{errorRegistro}</Texto> : null}
           <Boton onPress={reintentar} cargando={probando}>
             Reintentar
           </Boton>
         </View>
       )}
       {permiso === 'activo' && registrado && errorRegistro === null && probando === false && (
-        <Texto suave style={{ fontSize: 13 }}>Tu celular está conectado a los avisos.</Texto>
+        <Texto suave style={{ fontSize: 14 }}>Tu celular está conectado a los avisos.</Texto>
       )}
       {OPCIONES.map((o) => (
         <View key={o.clave} style={{ gap: espacio.s }}>
           <View style={estilos.fila}>
             <View style={{ flex: 1 }}>
               <Texto fuerte>{o.titulo}</Texto>
-              <Texto suave style={{ fontSize: 13 }}>{o.detalle}</Texto>
+              <Texto suave style={{ fontSize: 14 }}>{o.detalle}</Texto>
             </View>
             <Switch
               value={prefs[o.clave]}
@@ -127,7 +127,7 @@ export default function AjustesNotificaciones() {
           </View>
           {o.clave === 'pedidos_cerca' && prefs.pedidos_cerca && (
             <View style={estilos.chips}>
-              <Texto suave style={{ fontSize: 13, width: '100%' }}>Avisarme de pedidos a menos de:</Texto>
+              <Texto suave style={{ fontSize: 14, width: '100%' }}>Avisarme de pedidos a menos de:</Texto>
               {RADIOS.map((km) => (
                 <Chip key={km} activo={prefs.pedidos_radio_km === km} onPress={() => cambiar({ pedidos_radio_km: km })}>
                   {`${km} km`}
@@ -137,7 +137,7 @@ export default function AjustesNotificaciones() {
           )}
         </View>
       ))}
-      <Texto suave style={{ fontSize: 13 }}>
+      <Texto suave style={{ fontSize: 14 }}>
         Además de estos avisos, siempre ves todo en la campanita de arriba.
       </Texto>
     </ScrollView>

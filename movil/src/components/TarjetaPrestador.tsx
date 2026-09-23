@@ -57,7 +57,7 @@ export function TarjetaPrestador({
             </View>
           ))}
         </View>
-        <Texto suave style={{ fontSize: 13 }}>
+        <Texto suave style={{ fontSize: 14 }}>
           {[p.zone_label, textoDistancia(p.distancia_km)].filter(Boolean).join(', ')}
         </Texto>
         <Calificacion promedio={p.calificacion} cantidad={p.cant_resenas} />
@@ -76,10 +76,17 @@ export function TarjetaPrestador({
       >
         {contactando ? (
           <ActivityIndicator color={colores.tinta} />
-        ) : esWhatsApp ? (
-          <IconoWhatsApp size={22} color={colores.tinta} />
         ) : (
-          <MessageCircle size={22} color={colores.naranjaOscuro} />
+          <>
+            {esWhatsApp ? (
+              <IconoWhatsApp size={18} color={colores.tinta} />
+            ) : (
+              <MessageCircle size={18} color={colores.naranjaOscuro} />
+            )}
+            <Texto style={[estilos.contactoTexto, !esWhatsApp && { color: colores.naranjaOscuro }]}>
+              {esWhatsApp ? 'WhatsApp' : 'Mensaje'}
+            </Texto>
+          </>
         )}
       </Pressable>
     </Pressable>
@@ -101,6 +108,16 @@ const estilos = StyleSheet.create({
   nombre: { fontFamily: fuentes.tituloSuave, fontSize: 17 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   pill: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radio.full, backgroundColor: colores.grupo },
-  pillTexto: { fontSize: 12, lineHeight: 16, fontFamily: fuentes.textoMedio },
-  contacto: { width: 48, height: 48, borderRadius: radio.full, alignItems: 'center', justifyContent: 'center' },
+  pillTexto: { fontSize: 13, lineHeight: 18, fontFamily: fuentes.textoMedio },
+  contacto: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minWidth: 104,
+    height: 44,
+    paddingHorizontal: espacio.m,
+    borderRadius: radio.full,
+  },
+  contactoTexto: { fontFamily: fuentes.textoFuerte, fontSize: 14, color: colores.tinta },
 })

@@ -238,7 +238,7 @@ export default function MisServicios() {
             {totalFotos < MAX_FOTOS && (
               <Pressable accessibilityRole="button" onPress={sumarFotos} style={[estilos.foto, estilos.sumarFoto]}>
                 <ImagePlus size={26} color={colores.texto2} />
-                <Texto suave style={{ fontSize: 12 }}>Sumar</Texto>
+                <Texto suave style={{ fontSize: 14 }}>Sumar</Texto>
               </Pressable>
             )}
           </View>
@@ -257,7 +257,7 @@ export default function MisServicios() {
           <View style={estilos.pausa}>
             <View style={{ flex: 1 }}>
               <Texto fuerte>Recibir consultas</Texto>
-              <Texto suave style={{ fontSize: 13 }}>
+              <Texto suave style={{ fontSize: 14 }}>
                 {activo ? 'Aparecés en el catálogo.' : 'Pausado: no aparecés en el catálogo.'}
               </Texto>
             </View>

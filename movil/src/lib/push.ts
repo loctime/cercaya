@@ -67,7 +67,18 @@ async function guardarToken() {
   if (!projectId) return false
   try {
     const N = await modulo()
-    const { data: token } = await N.getExpoPushTokenAsync({ projectId })
+    // SERVICE_NOT_AVAILABLE suele ser pasajero (servicios de Google
+    // arrancando, mala señal): se reintenta antes de rendirse.
+    let token = ''
+    for (let intento = 1; ; intento++) {
+      try {
+        token = (await N.getExpoPushTokenAsync({ projectId })).data
+        break
+      } catch (e) {
+        if (intento >= 3) throw e
+        await new Promise((r) => setTimeout(r, intento * 3000))
+      }
+    }
     const { error } = await supabase.rpc('registrar_push_token', { p_token: token, p_platform: Platform.OS })
     if (error) throw error
     localStorage.setItem(CLAVE_TOKEN, token)

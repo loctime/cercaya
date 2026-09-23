@@ -2,7 +2,7 @@
 // Naranja de marca siempre con texto oscuro; botones con texto blanco usan naranjaOscuro.
 
 export const colores = {
-  naranja: '#FF7A00',
+  naranja: '#FE6F14',
   naranjaOscuro: '#C2410C',
   naranjaSuave: '#FFF1E5',
   tinta: '#1E1E1E',

@@ -12,10 +12,10 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FF7A00",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#FE6F14"
       },
       "predictiveBackGestureEnabled": false,
       "package": "ar.controlapps.cercaya",
@@ -57,8 +57,8 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-monochrome.png",
-          "color": "#FF7A00",
+          "icon": "./assets/notification-icon.png",
+          "color": "#FE6F14",
           "defaultChannel": "default"
         }
       ],

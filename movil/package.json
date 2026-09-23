@@ -21,6 +21,7 @@
     "expo-splash-screen": "~57.0.9",
     "expo-sqlite": "~57.0.3",
     "expo-status-bar": "~57.0.1",
+    "expo-updates": "~57.0.23",
     "lucide-react-native": "^1.47.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -40,7 +41,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --experimental-strip-types src/lib/*.test.ts"
+    "test": "node --test --experimental-strip-types src/lib/*.test.ts",
+    "actualizar:prueba": "eas update --channel preview --environment preview --platform android -m"
   },
   "private": true
 }

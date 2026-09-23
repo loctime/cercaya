@@ -1,3 +1,6 @@
+-- Contraseña de los usuarios demo: variable demo_password (psql -v demo_password=...).
+-- NO poner la contraseña real acá: el repo es público. La vigente está en
+-- ~/.claude/credenciales/cercaya/demo-password.txt (PC de Diego, fuera del repo).
 -- Datos de DEMOSTRACION en produccion (aprobado por Diego 23/09/2026).
 -- Todos los usuarios usan email @cercaya.test. Se borran con borrar_demo.sql.
 -- Telefonos ocultos: con numeros inventados, el boton de WhatsApp le
@@ -70,7 +73,7 @@ update auth.users set confirmation_token = coalesce(confirmation_token, ''), rec
   email_change_token_new = coalesce(email_change_token_new, ''), email_change_token_current = coalesce(email_change_token_current, ''),
   email_change = coalesce(email_change, ''), phone_change = coalesce(phone_change, ''), phone_change_token = coalesce(phone_change_token, ''),
   reauthentication_token = coalesce(reauthentication_token, ''), email_confirmed_at = coalesce(email_confirmed_at, now()),
-  encrypted_password = extensions.crypt('DemoCercaYa-2026', extensions.gen_salt('bf'))
+  encrypted_password = extensions.crypt(:'demo_password', extensions.gen_salt('bf'))
  where email like '%@cercaya.test';
 insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
 select u.id::text, u.id, jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true), 'email', now(), now(), now()

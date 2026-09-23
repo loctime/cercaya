@@ -46,6 +46,7 @@ export function Boton({
   onPress,
   variante = 'primario',
   icono: Icono,
+  adorno,
   cargando,
   deshabilitado,
   style,
@@ -54,6 +55,8 @@ export function Boton({
   onPress?: () => void
   variante?: Variante
   icono?: LucideIcon
+  /** Icono que no es de lucide (por ejemplo el logo de WhatsApp). */
+  adorno?: ReactNode
   cargando?: boolean
   deshabilitado?: boolean
   style?: ViewStyle
@@ -79,6 +82,7 @@ export function Boton({
       ) : (
         <>
           {Icono && <Icono size={20} color={v.texto} />}
+          {adorno}
           <Text style={[estilos.botonTexto, { color: v.texto }]}>{children}</Text>
         </>
       )}

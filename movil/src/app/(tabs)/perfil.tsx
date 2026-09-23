@@ -2,21 +2,13 @@ import { Bell, BriefcaseBusiness, ChevronRight, CircleHelp, FileText, LogOut, Sh
 import type { LucideIcon } from 'lucide-react-native'
 import { useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { Avatar } from '../../components/Avatar'
 import { RequiereLogin } from '../../components/RequiereLogin'
 import { Boton, Texto, Titulo } from '../../components/ui'
 import { fecha } from '../../lib/datos'
 import { useSesion } from '../../lib/sesion'
 import { supabase } from '../../lib/supabase'
-import { colores, espacio, fuentes, radio } from '../../theme'
-
-function iniciales(nombre: string) {
-  return nombre
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]!.toUpperCase())
-    .join('')
-}
+import { colores, espacio, radio } from '../../theme'
 
 function Opcion({ icono: Icono, texto, onPress }: { icono: LucideIcon; texto: string; onPress?: () => void }) {
   return (
@@ -65,9 +57,7 @@ export default function Perfil() {
     >
       <ScrollView contentContainerStyle={estilos.contenido}>
         <View style={estilos.cabecera}>
-          <View style={estilos.avatar}>
-            <Texto style={estilos.avatarTexto}>{iniciales(perfil?.full_name ?? '')}</Texto>
-          </View>
+          <Avatar nombre={perfil?.full_name ?? ''} url={perfil?.avatar_url} tam={64} />
           <View style={{ flex: 1 }}>
             <Titulo nivel={2}>{perfil?.full_name}</Titulo>
             {perfil && <Texto suave>En CercaYa desde {fecha(perfil.created_at)}</Texto>}
@@ -102,15 +92,6 @@ export default function Perfil() {
 const estilos = StyleSheet.create({
   contenido: { padding: espacio.l, gap: espacio.l, paddingBottom: espacio.xxl },
   cabecera: { flexDirection: 'row', alignItems: 'center', gap: espacio.m },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: radio.full,
-    backgroundColor: colores.naranja,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarTexto: { fontFamily: fuentes.titulo, fontSize: 22, color: colores.tinta },
   servicios: { gap: espacio.s, padding: espacio.l, borderRadius: radio.l, backgroundColor: colores.naranjaSuave },
   menu: { borderRadius: radio.m, borderWidth: 1, borderColor: colores.borde, overflow: 'hidden' },
   opcion: {

@@ -43,6 +43,9 @@ export default function RootLayout() {
           <Stack.Screen name="publicar" options={{ presentation: 'modal', title: 'Publicar pedido' }} />
           <Stack.Screen name="localidad" options={{ presentation: 'modal', title: 'Tu zona' }} />
           <Stack.Screen name="notificaciones" options={{ title: 'Notificaciones' }} />
+          <Stack.Screen name="prestador/[id]" options={{ title: '' }} />
+          <Stack.Screen name="denunciar" options={{ presentation: 'modal', title: 'Denunciar' }} />
+          <Stack.Screen name="chat/[id]" options={{ title: 'Chat' }} />
         </Stack>
       </UbicacionProvider>
     </SesionProvider>

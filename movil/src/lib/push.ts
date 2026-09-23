@@ -64,11 +64,20 @@ export async function configurarPush() {
 }
 
 async function guardarToken() {
-  if (!projectId) return
-  const N = await modulo()
-  const { data: token } = await N.getExpoPushTokenAsync({ projectId })
-  const { error } = await supabase.rpc('registrar_push_token', { p_token: token, p_platform: Platform.OS })
-  if (!error) localStorage.setItem(CLAVE_TOKEN, token)
+  if (!projectId) return false
+  try {
+    const N = await modulo()
+    const { data: token } = await N.getExpoPushTokenAsync({ projectId })
+    const { error } = await supabase.rpc('registrar_push_token', { p_token: token, p_platform: Platform.OS })
+    if (error) throw error
+    localStorage.setItem(CLAVE_TOKEN, token)
+    return true
+  } catch (e) {
+    // Visible en la terminal del servidor de desarrollo. En Android, sin
+    // Firebase (google-services.json) getExpoPushTokenAsync falla aca.
+    console.warn('[push] no se pudo registrar el celular:', e instanceof Error ? e.message : e)
+    return false
+  }
 }
 
 // Se llama al tener sesion. Si ya hay permiso, registra el token en
@@ -96,8 +105,9 @@ export async function prepararPushConSesion() {
         },
       ],
     )
-  } catch {
+  } catch (e) {
     // Sin push la app funciona igual: los avisos quedan en la campanita.
+    console.warn('[push]', e instanceof Error ? e.message : e)
   }
 }
 
@@ -120,6 +130,5 @@ export async function estadoPermisoPush(): Promise<'no_disponible' | 'activo' | 
 export async function pedirPermisoPush() {
   const N = await modulo()
   const r = await N.requestPermissionsAsync()
-  if (r.granted) await guardarToken()
-  return r.granted
+  return r.granted && (await guardarToken())
 }

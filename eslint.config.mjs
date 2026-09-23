@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // App Expo: tiene su propio lint (npx expo lint dentro de movil/).
+    "movil/**",
   ]),
 ]);
 

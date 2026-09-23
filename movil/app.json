@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "CercaYa",
+    "slug": "cercaya",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "ar.controlapps.cercaya"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FF7A00",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "ar.controlapps.cercaya"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-sqlite",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CercaYa usa tu ubicación para mostrarte prestadores y pedidos cerca tuyo. Nunca mostramos tu ubicación exacta a otras personas."
+        }
+      ]
+    ],
+    "scheme": "cercaya",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

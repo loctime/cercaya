@@ -46,3 +46,9 @@ next-env.d.ts
 # Memoria local de Claude (no commitear)
 CLAUDE.local.md
 .tmp/
+
+# Credenciales de Firebase: nunca al repo (copia en ~/.claude/credenciales/cercaya)
+google-services.json
+GoogleService-Info.plist
+*firebase-adminsdk*.json
+*cuenta-servicio*.json

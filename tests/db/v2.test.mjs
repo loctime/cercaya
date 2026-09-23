@@ -262,3 +262,20 @@ test('mis chats: ultimo mensaje, no leidos, ocultos y bloqueados', async () => {
   assert.equal((await db.como(c, (d) => d.sql('select * from mis_chats()'))).length, 1, 'el otro lo sigue viendo')
   await rechaza(db.como(null, (d) => d.sql('select * from mis_chats()')), /permission denied/)
 })
+
+test('push: el token pasa a quien inicia sesion en ese celular', async () => {
+  const a = await db.usuario('Push A')
+  const b = await db.usuario('Push B')
+  const token = 'ExponentPushToken[abc123]'
+  await db.como(a, (d) => d.sql(`select registrar_push_token($1, 'android')`, [token]))
+  assert.equal((await db.uno('select user_id from push_tokens where token = $1', [token])).user_id, a)
+  await db.como(b, (d) => d.sql(`select registrar_push_token($1, 'android')`, [token]))
+  const filas = await db.sql('select user_id from push_tokens where token = $1', [token])
+  assert.deepEqual(filas.map((f) => f.user_id), [b], 'un celular, una cuenta')
+  await rechaza(db.como(a, (d) => d.sql(`select registrar_push_token('cualquier cosa', 'android')`)), /Token invalido/)
+  await rechaza(db.como(null, (d) => d.sql(`select registrar_push_token($1, 'android')`, [token])), /permission denied/)
+  // Sin pg_net (PGlite) el aviso se guarda igual y queda sin enviar.
+  await db.sql(`select encolar_notificacion($1, 'sistema', 'Hola', 'Prueba')`, [b])
+  const n = await db.uno(`select sent_at from notifications where user_id = $1`, [b])
+  assert.equal(n.sent_at, null)
+})

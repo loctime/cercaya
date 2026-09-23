@@ -1,10 +1,12 @@
+import { BellRing } from 'lucide-react-native'
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, View } from 'react-native'
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Switch, View } from 'react-native'
 import { Chip } from '../components/Chip'
-import { Texto } from '../components/ui'
+import { Boton, Texto } from '../components/ui'
+import { estadoPermisoPush, pedirPermisoPush } from '../lib/push'
 import { useSesion } from '../lib/sesion'
 import { supabase } from '../lib/supabase'
-import { colores, espacio } from '../theme'
+import { colores, espacio, radio } from '../theme'
 
 type Prefs = {
   pedidos_cerca: boolean
@@ -27,6 +29,11 @@ export default function AjustesNotificaciones() {
   const { sesion } = useSesion()
   const yo = sesion?.user.id ?? ''
   const [prefs, setPrefs] = useState<Prefs | null>(null)
+  const [permiso, setPermiso] = useState<Awaited<ReturnType<typeof estadoPermisoPush>> | null>(null)
+
+  useEffect(() => {
+    estadoPermisoPush().then(setPermiso)
+  }, [])
 
   useEffect(() => {
     supabase
@@ -51,6 +58,29 @@ export default function AjustesNotificaciones() {
 
   return (
     <ScrollView contentContainerStyle={estilos.contenido}>
+      {permiso && permiso !== 'activo' && (
+        <View style={estilos.tarjeta}>
+          <BellRing size={24} color={colores.naranjaOscuro} />
+          <Texto fuerte>
+            {permiso === 'no_disponible' ? 'Avisos al celular: todavía no' : 'Los avisos al celular están apagados'}
+          </Texto>
+          <Texto suave style={{ fontSize: 14 }}>
+            {permiso === 'no_disponible'
+              ? 'En esta versión de prueba los avisos quedan en la campanita. Van a llegar al celular en la versión instalable.'
+              : 'Activalos para enterarte al toque de mensajes y pedidos, aunque tengas la app cerrada.'}
+          </Texto>
+          {permiso === 'pendiente' && (
+            <Boton onPress={async () => setPermiso((await pedirPermisoPush()) ? 'activo' : 'denegado')}>
+              Activar avisos
+            </Boton>
+          )}
+          {permiso === 'denegado' && (
+            <Boton variante="secundario" onPress={() => Linking.openSettings()}>
+              Abrir ajustes del teléfono
+            </Boton>
+          )}
+        </View>
+      )}
       {OPCIONES.map((o) => (
         <View key={o.clave} style={{ gap: espacio.s }}>
           <View style={estilos.fila}>
@@ -89,4 +119,5 @@ const estilos = StyleSheet.create({
   contenido: { padding: espacio.xl, gap: espacio.xl },
   fila: { flexDirection: 'row', alignItems: 'center', gap: espacio.m },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
+  tarjeta: { gap: espacio.s, padding: espacio.l, borderRadius: radio.l, backgroundColor: colores.naranjaSuave },
 })

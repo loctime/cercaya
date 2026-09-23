@@ -19,6 +19,7 @@ import { RequiereLogin } from '../../components/RequiereLogin'
 import { Boton, Texto, Titulo } from '../../components/ui'
 import { fecha, useCategorias } from '../../lib/datos'
 import { borrarMisArchivos } from '../../lib/imagenes'
+import { olvidarTokenDeEsteCelular } from '../../lib/push'
 import { useSesion } from '../../lib/sesion'
 import { supabase } from '../../lib/supabase'
 import { colores, espacio, fuentes, radio } from '../../theme'
@@ -181,7 +182,14 @@ export default function Perfil() {
           {perfil?.is_admin && <Opcion icono={ShieldCheck} texto="Administración" onPress={() => router.push('/admin')} />}
           <Opcion icono={CircleHelp} texto="Ayuda y soporte" />
           <Opcion icono={FileText} texto="Términos y privacidad" />
-          <Opcion icono={LogOut} texto="Cerrar sesión" onPress={() => supabase.auth.signOut()} />
+          <Opcion
+            icono={LogOut}
+            texto="Cerrar sesión"
+            onPress={async () => {
+              await olvidarTokenDeEsteCelular().catch(() => {})
+              await supabase.auth.signOut()
+            }}
+          />
         </View>
 
         <Boton variante="peligro" onPress={eliminarCuenta} cargando={borrando}>

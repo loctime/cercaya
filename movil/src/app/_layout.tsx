@@ -5,11 +5,26 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
-import { SesionProvider } from '../lib/sesion'
+import { configurarPush, prepararPushConSesion } from '../lib/push'
+import { SesionProvider, useSesion } from '../lib/sesion'
 import { UbicacionProvider } from '../lib/ubicacion'
 import { colores, fuentes } from '../theme'
 
 SplashScreen.preventAutoHideAsync()
+
+// Notificaciones: manejo del toque siempre; registro del celular con sesion.
+function Push() {
+  const { sesion } = useSesion()
+  useEffect(() => {
+    let limpiar: (() => void) | undefined
+    configurarPush().then((f) => (limpiar = f))
+    return () => limpiar?.()
+  }, [])
+  useEffect(() => {
+    if (sesion) prepararPushConSesion()
+  }, [sesion?.user.id])
+  return null
+}
 
 export default function RootLayout() {
   const [fuentesListas] = useFonts({
@@ -30,6 +45,7 @@ export default function RootLayout() {
     <SesionProvider>
       <UbicacionProvider>
         <StatusBar style="dark" />
+        <Push />
         <Stack
           screenOptions={{
             headerTitleStyle: { fontFamily: fuentes.titulo, color: colores.tinta },

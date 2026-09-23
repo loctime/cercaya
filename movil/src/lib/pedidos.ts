@@ -1,6 +1,8 @@
 // Pedidos: tipos, textos de estado y fotos (bucket privado "pedidos").
-import * as ImagePicker from 'expo-image-picker'
+import { elegirImagenes, subirImagen, type FotoLocal } from './imagenes'
 import { supabase } from './supabase'
+
+export type { FotoLocal }
 
 export type EstadoPedido = 'abierto' | 'en_conversacion' | 'asignado' | 'realizado' | 'cerrado' | 'cancelado'
 export type Urgencia = 'hoy' | 'semana' | 'a_coordinar'
@@ -46,30 +48,12 @@ export const textoUrgencia = (u: Urgencia) => URGENCIAS.find((x) => x.valor === 
 // ---------------------------------------------------------------------
 // Fotos
 // ---------------------------------------------------------------------
-export type FotoLocal = { uri: string; mimeType?: string | null }
-
-export async function elegirFotos(max: number): Promise<FotoLocal[]> {
-  const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync()
-  if (!permiso.granted) return []
-  const r = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    allowsMultipleSelection: true,
-    selectionLimit: max,
-    quality: 0.6,
-  })
-  if (r.canceled) return []
-  return r.assets.slice(0, max).map((a) => ({ uri: a.uri, mimeType: a.mimeType }))
-}
+export const elegirFotos = (max: number) => elegirImagenes(max)
 
 // Sube las fotos a pedidos/<mi id>/<pedido>/n.jpg y las registra.
 export async function subirFotosPedido(jobId: string, userId: string, fotos: FotoLocal[]) {
   for (const [i, f] of fotos.entries()) {
-    const datos = await (await fetch(f.uri)).arrayBuffer()
-    const tipo = f.mimeType ?? 'image/jpeg'
-    const ext = tipo.split('/')[1] ?? 'jpg'
-    const ruta = `${userId}/${jobId}/${i}-${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('pedidos').upload(ruta, datos, { contentType: tipo })
-    if (error) throw error
+    const ruta = await subirImagen('pedidos', `${userId}/${jobId}`, f)
     const { error: e2 } = await supabase.from('job_photos').insert({ job_id: jobId, storage_path: ruta, position: i })
     if (e2) throw e2
   }

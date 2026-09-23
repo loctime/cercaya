@@ -150,7 +150,7 @@ export default function Inicio() {
             <Boton variante="secundario" onPress={() => router.push('/localidad')}>
               Cambiar de localidad
             </Boton>
-            <Boton variante="marca" onPress={() => router.push(sesion ? '/perfil' : '/login')}>
+            <Boton variante="marca" onPress={() => router.push(sesion ? '/mis-servicios' : '/login')}>
               Ofrecer este servicio
             </Boton>
           </Vacio>

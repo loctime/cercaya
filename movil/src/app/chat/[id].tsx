@@ -39,7 +39,6 @@ type Cabecera = {
   otroEsPrestador: boolean
   jobId: string | null
   jobTitulo: string | null
-  miTelefono: string | null
 }
 
 const CAMPOS = 'id, sender_id, kind, body, contact_phone, created_at, read_at'
@@ -84,11 +83,10 @@ export default function Chat() {
         return
       }
       const otroId = conv.user_a === yo ? conv.user_b : conv.user_a
-      const [otro, prest, job, priv, msjs] = await Promise.all([
+      const [otro, prest, job, msjs] = await Promise.all([
         supabase.from('profiles').select('full_name').eq('id', otroId).single(),
         supabase.from('provider_profiles').select('user_id').eq('user_id', otroId).maybeSingle(),
         conv.job_id ? supabase.from('jobs').select('title').eq('id', conv.job_id).maybeSingle() : Promise.resolve({ data: null }),
-        supabase.from('profile_private').select('phone').eq('user_id', yo).single(),
         supabase.from('messages').select(CAMPOS).eq('conversation_id', id).order('created_at', { ascending: false }).limit(200),
       ])
       setCab({
@@ -97,7 +95,6 @@ export default function Chat() {
         otroEsPrestador: !!prest.data,
         jobId: conv.job_id,
         jobTitulo: job.data?.title ?? null,
-        miTelefono: priv.data?.phone ?? null,
       })
       setMensajes((msjs.data as Mensaje[]) ?? [])
       supabase.rpc('marcar_leidos', { p_conv: id })
@@ -139,14 +136,20 @@ export default function Chat() {
     mezclar([data as Mensaje])
   }
 
-  function compartirContacto() {
+  async function compartirContacto() {
     if (!cab) return
-    if (!cab.miTelefono) {
-      return Alert.alert('Falta tu celular', 'Cargá tu celular en tu perfil para poder compartirlo.')
+    // Se lee en el momento: pudo haberlo cargado recien en "Mis datos".
+    const { data: priv } = await supabase.from('profile_private').select('phone').eq('user_id', yo).single()
+    const miTelefono = priv?.phone ?? null
+    if (!miTelefono) {
+      return Alert.alert('Falta tu celular', 'Cargá tu celular en tus datos para poder compartirlo.', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Cargar celular', onPress: () => router.push('/editar-perfil') },
+      ])
     }
     Alert.alert(
       'Compartir mi contacto',
-      `${cab.otroNombre.split(' ')[0]} va a ver tu número (${cab.miTelefono}) y un botón para escribirte por WhatsApp.`,
+      `${cab.otroNombre.split(' ')[0]} va a ver tu número (${miTelefono}) y un botón para escribirte por WhatsApp.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {

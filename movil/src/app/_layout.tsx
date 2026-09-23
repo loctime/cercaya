@@ -49,6 +49,11 @@ export default function RootLayout() {
           <Stack.Screen name="pedido/[id]" options={{ title: '' }} />
           <Stack.Screen name="calificar" options={{ presentation: 'modal', title: 'Calificar' }} />
           <Stack.Screen name="pedidos-cerca" options={{ title: 'Pedidos cerca' }} />
+          <Stack.Screen name="editar-perfil" options={{ title: 'Mis datos' }} />
+          <Stack.Screen name="mis-servicios" options={{ title: 'Mis servicios' }} />
+          <Stack.Screen name="privacidad" options={{ title: 'Privacidad' }} />
+          <Stack.Screen name="ajustes-notificaciones" options={{ title: 'Notificaciones' }} />
+          <Stack.Screen name="admin" options={{ title: 'Administración' }} />
         </Stack>
       </UbicacionProvider>
     </SesionProvider>

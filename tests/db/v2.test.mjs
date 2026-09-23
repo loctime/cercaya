@@ -231,3 +231,34 @@ test('limite de 5 pedidos por dia', async () => {
   }
   await rechaza(db.como(u, (d) => d.sql(`select publicar_pedido($1, 'Otro', 'Descripcion suficientemente larga', 'hoy')`, [PLOMERIA])), /limite/)
 })
+
+test('mis chats: ultimo mensaje, no leidos, ocultos y bloqueados', async () => {
+  const a = await db.usuario('Chat A', RAMALLO)
+  const b = await db.usuario('Chat B', RAMALLO)
+  const c = await db.usuario('Chat C', RAMALLO)
+  const conv = (await db.como(a, (d) => d.uno('select abrir_chat($1) as c', [b]))).c
+  const conv2 = (await db.como(a, (d) => d.uno('select abrir_chat($1) as c', [c]))).c
+  await db.como(b, (d) => d.sql(`insert into messages (conversation_id, sender_id, body) values ($1, $2, 'hola A')`, [conv, b]))
+  await db.como(b, (d) => d.sql(`insert into messages (conversation_id, sender_id, body) values ($1, $2, 'estas?')`, [conv, b]))
+
+  let chats = await db.como(a, (d) => d.sql('select * from mis_chats()'))
+  const fila = chats.find((x) => x.id === conv)
+  assert.equal(fila.otro_nombre, 'Chat B')
+  assert.equal(fila.ultimo_texto, 'estas?')
+  assert.equal(fila.ultimo_mio, false)
+  assert.equal(Number(fila.sin_leer), 2)
+
+  await db.como(a, (d) => d.sql('select marcar_leidos($1)', [conv]))
+  chats = await db.como(a, (d) => d.sql('select * from mis_chats()'))
+  assert.equal(Number(chats.find((x) => x.id === conv).sin_leer), 0)
+
+  await db.como(a, (d) => d.sql('select ocultar_chat($1)', [conv2]))
+  chats = await db.como(a, (d) => d.sql('select id from mis_chats()'))
+  assert.ok(!chats.some((x) => x.id === conv2), 'oculto no aparece')
+
+  await db.como(a, (d) => d.sql('insert into blocks (blocker_id, blocked_id) values ($1, $2)', [a, b]))
+  chats = await db.como(a, (d) => d.sql('select id from mis_chats()'))
+  assert.ok(!chats.some((x) => x.id === conv), 'bloqueado no aparece')
+  assert.equal((await db.como(c, (d) => d.sql('select * from mis_chats()'))).length, 1, 'el otro lo sigue viendo')
+  await rechaza(db.como(null, (d) => d.sql('select * from mis_chats()')), /permission denied/)
+})

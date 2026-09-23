@@ -77,6 +77,7 @@ grant execute on function
   public.compartir_contacto(uuid),
   public.marcar_leidos(uuid),
   public.ocultar_chat(uuid),
+  public.mis_chats(),
   public.me_interesa(uuid, text),
   public.asignar_prestador(uuid, uuid),
   public.checkin(uuid, float8, float8),

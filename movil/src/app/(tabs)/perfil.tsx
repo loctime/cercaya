@@ -7,6 +7,7 @@ import {
   FileText,
   LogOut,
   Pencil,
+  ScrollText,
   Shield,
   ShieldCheck,
   UserRound,
@@ -20,6 +21,7 @@ import { Boton, Texto, Titulo } from '../../components/ui'
 import { fecha, useCategorias } from '../../lib/datos'
 import { borrarMisArchivos } from '../../lib/imagenes'
 import { olvidarTokenDeEsteCelular } from '../../lib/push'
+import { abrirPagina } from '../../lib/sitio'
 import { useSesion } from '../../lib/sesion'
 import { supabase } from '../../lib/supabase'
 import { colores, espacio, fuentes, radio } from '../../theme'
@@ -180,8 +182,9 @@ export default function Perfil() {
           <Opcion icono={Shield} texto="Privacidad" onPress={() => router.push('/privacidad')} />
           <Opcion icono={Bell} texto="Notificaciones" onPress={() => router.push('/ajustes-notificaciones')} />
           {perfil?.is_admin && <Opcion icono={ShieldCheck} texto="Administración" onPress={() => router.push('/admin')} />}
-          <Opcion icono={CircleHelp} texto="Ayuda y soporte" />
-          <Opcion icono={FileText} texto="Términos y privacidad" />
+          <Opcion icono={CircleHelp} texto="Ayuda y soporte" onPress={() => abrirPagina('soporte')} />
+          <Opcion icono={ScrollText} texto="Términos y condiciones" onPress={() => abrirPagina('terminos')} />
+          <Opcion icono={FileText} texto="Política de privacidad" onPress={() => abrirPagina('privacidad')} />
           <Opcion
             icono={LogOut}
             texto="Cerrar sesión"

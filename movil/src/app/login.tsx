@@ -4,6 +4,7 @@ import { MailCheck } from 'lucide-react-native'
 import { useState } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Boton, Campo, Texto, Titulo, Vacio } from '../components/ui'
+import { abrirPagina } from '../lib/sitio'
 import { supabase } from '../lib/supabase'
 import { colores, espacio, fuentes, radio } from '../theme'
 
@@ -151,7 +152,15 @@ export default function Login() {
 
         {modo === 'registro' && (
           <Texto suave style={{ fontSize: 13, textAlign: 'center' }}>
-            Al crear la cuenta aceptás los Términos y la Política de Privacidad de CercaYa.
+            Al crear la cuenta aceptás los{' '}
+            <Texto style={estilos.link} onPress={() => abrirPagina('terminos')}>
+              Términos
+            </Texto>{' '}
+            y la{' '}
+            <Texto style={estilos.link} onPress={() => abrirPagina('privacidad')}>
+              Política de Privacidad
+            </Texto>{' '}
+            de CercaYa.
           </Texto>
         )}
       </ScrollView>
@@ -165,4 +174,5 @@ const estilos = StyleSheet.create({
   opcion: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radio.s },
   opcionActiva: { backgroundColor: colores.fondo, borderWidth: 1, borderColor: colores.borde },
   opcionTexto: { fontFamily: fuentes.textoFuerte, color: colores.texto2 },
+  link: { fontSize: 13, color: colores.naranjaOscuro, textDecorationLine: 'underline' },
 })

@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const nunito = Nunito({ subsets: ['latin'], weight: ['700', '800'], variable: '--font-nunito' })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://cercaya.controlapps.ar'),
+  metadataBase: new URL('https://www.cercaya.controlapps.ar'),
   title: { default: 'CercaYa — Servicios de confianza cerca tuyo', template: '%s — CercaYa' },
   description:
     'Encontrá plomeros, electricistas, jardineros y más en Ramallo y zona. Chateá, coordiná y calificá, sin dar tu número si no querés.',

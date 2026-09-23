@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Switch, View } from 'react-native'
 import { Chip } from '../components/Chip'
 import { Boton, Texto } from '../components/ui'
-import { estadoPermisoPush, pedirPermisoPush } from '../lib/push'
+import { celularRegistrado, estadoPermisoPush, pedirPermisoPush, reintentarRegistroPush } from '../lib/push'
 import { useSesion } from '../lib/sesion'
 import { supabase } from '../lib/supabase'
 import { colores, espacio, radio } from '../theme'
@@ -30,6 +30,18 @@ export default function AjustesNotificaciones() {
   const yo = sesion?.user.id ?? ''
   const [prefs, setPrefs] = useState<Prefs | null>(null)
   const [permiso, setPermiso] = useState<Awaited<ReturnType<typeof estadoPermisoPush>> | null>(null)
+  const [registrado, setRegistrado] = useState(celularRegistrado())
+  const [probando, setProbando] = useState(false)
+  const [errorRegistro, setErrorRegistro] = useState<string | null>(null)
+
+  async function reintentar() {
+    setProbando(true)
+    setErrorRegistro(null)
+    const error = await reintentarRegistroPush()
+    setProbando(false)
+    setRegistrado(!error)
+    setErrorRegistro(error)
+  }
 
   useEffect(() => {
     estadoPermisoPush().then(setPermiso)
@@ -80,6 +92,23 @@ export default function AjustesNotificaciones() {
             </Boton>
           )}
         </View>
+      )}
+      {permiso === 'activo' && !registrado && (
+        <View style={estilos.tarjeta}>
+          <BellRing size={24} color={colores.naranjaOscuro} />
+          <Texto fuerte>Tu celular todavía no está conectado a los avisos</Texto>
+          <Texto suave style={{ fontSize: 14 }}>
+            Diste el permiso, pero no pudimos conectarnos con el servicio de notificaciones de Google. Revisá la conexión (y
+            si usás VPN, apagala) y probá de nuevo.
+          </Texto>
+          {errorRegistro ? <Texto style={{ fontSize: 12, color: colores.peligro }}>{errorRegistro}</Texto> : null}
+          <Boton onPress={reintentar} cargando={probando}>
+            Reintentar
+          </Boton>
+        </View>
+      )}
+      {permiso === 'activo' && registrado && errorRegistro === null && probando === false && (
+        <Texto suave style={{ fontSize: 13 }}>Tu celular está conectado a los avisos.</Texto>
       )}
       {OPCIONES.map((o) => (
         <View key={o.clave} style={{ gap: espacio.s }}>

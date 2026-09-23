@@ -14,6 +14,9 @@ import { supabase } from './supabase'
 const CLAVE_PREGUNTADO = 'cercaya.push.preguntado'
 const CLAVE_TOKEN = 'cercaya.push.token'
 
+// Ultimo error al registrar el celular (para mostrarlo en Ajustes).
+export let ultimoErrorPush: string | null = null
+
 export const pushDisponible =
   Device.isDevice && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient
 
@@ -82,8 +85,10 @@ async function guardarToken() {
     const { error } = await supabase.rpc('registrar_push_token', { p_token: token, p_platform: Platform.OS })
     if (error) throw error
     localStorage.setItem(CLAVE_TOKEN, token)
+    ultimoErrorPush = null
     return true
   } catch (e) {
+    ultimoErrorPush = e instanceof Error ? e.message : String(e)
     // Visible en la terminal del servidor de desarrollo. En Android, sin
     // Firebase (google-services.json) getExpoPushTokenAsync falla aca.
     console.warn('[push] no se pudo registrar el celular:', e instanceof Error ? e.message : e)
@@ -136,6 +141,15 @@ export async function estadoPermisoPush(): Promise<'no_disponible' | 'activo' | 
   const N = await modulo()
   const { status } = await N.getPermissionsAsync()
   return status === 'granted' ? 'activo' : status === 'undetermined' ? 'pendiente' : 'denegado'
+}
+
+// El celular esta registrado para recibir avisos? (token guardado)
+export const celularRegistrado = () => !!localStorage.getItem(CLAVE_TOKEN)
+
+// Reintento manual desde Ajustes: devuelve null si anduvo o el error.
+export async function reintentarRegistroPush(): Promise<string | null> {
+  const ok = await guardarToken()
+  return ok ? null : (ultimoErrorPush ?? 'Error desconocido')
 }
 
 export async function pedirPermisoPush() {

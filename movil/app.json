@@ -41,6 +41,14 @@
         {
           "locationWhenInUsePermission": "CercaYa usa tu ubicación para mostrarte prestadores y pedidos cerca tuyo. Nunca mostramos tu ubicación exacta a otras personas."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CercaYa usa tus fotos para que puedas mostrar el problema en un pedido o tus trabajos en tu perfil.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "scheme": "cercaya",

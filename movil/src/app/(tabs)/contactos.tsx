@@ -17,7 +17,8 @@ import { colores, espacio } from '../../theme'
 export default function Contactos() {
   const [lista, setLista] = useState<Contacto[]>([]),
     [q, setQ] = useState(''),
-    [resultados, setResultados] = useState<ResultadoBusqueda[]>([])
+    [resultados, setResultados] = useState<ResultadoBusqueda[]>([]),
+    [mensaje, setMensaje] = useState('')
   const cargar = () =>
     cargarContactos()
       .then(setLista)
@@ -29,10 +30,16 @@ export default function Contactos() {
   )
   async function hacerBuscar(t: string) {
     setQ(t)
+    setMensaje('')
     if (t.trim().length < 3) return setResultados([])
     try {
-      setResultados(await buscar(t))
-    } catch {}
+      const r = await buscar(t)
+      setResultados(r)
+      if (r.length === 0) setMensaje('No encontramos a nadie con ese nombre o teléfono.')
+    } catch (e: any) {
+      setResultados([])
+      setMensaje(`No pudimos buscar: ${e.message}`)
+    }
   }
   async function accion(fn: () => Promise<unknown>) {
     try {
@@ -52,6 +59,7 @@ export default function Contactos() {
       texto="Entrá para agregar vecinos y compartir ubicación si querés."
     >
       <FlatList
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: espacio.l, gap: espacio.m }}
         data={aceptados}
         keyExtractor={(x) => x.user_id}
@@ -78,7 +86,8 @@ export default function Contactos() {
                   </Fila>
                 ))}
               </>
-            )}{' '}
+            )}
+            {mensaje !== '' && <Texto suave>{mensaje}</Texto>}
             {resultados.map((x) => (
               <Fila key={x.user_id} x={x}>
                 {x.estado ? (

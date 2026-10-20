@@ -16,14 +16,18 @@ const REFRESCO_MS = 60_000
 export default function Mapa() {
   const { origen } = useUbicacion()
   const [contactos, setContactos] = useState<ContactoMapa[]>([])
+  const [error, setError] = useState('')
 
   // Se recarga al entrar a la pestania y cada minuto mientras esta a la vista.
   useFocusEffect(
     useCallback(() => {
       const cargar = () =>
         cargarMapa()
-          .then(setContactos)
-          .catch(() => {})
+          .then((c) => {
+            setContactos(c)
+            setError('')
+          })
+          .catch((e) => setError(e.message))
       cargar()
       const intervalo = setInterval(cargar, REFRESCO_MS)
       return () => clearInterval(intervalo)
@@ -68,7 +72,7 @@ export default function Mapa() {
         )}
 
         <View style={estilos.nota}>
-          <Texto suave>Las ubicaciones son aproximadas.</Texto>
+          <Texto suave>{error ? `No pudimos cargar los contactos: ${error}` : 'Las ubicaciones son aproximadas.'}</Texto>
         </View>
       </View>
     </RequiereLogin>

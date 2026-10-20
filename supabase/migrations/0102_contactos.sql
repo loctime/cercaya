@@ -45,10 +45,10 @@ create or replace function public.mis_contactos() returns table(contact_id uuid,
  where auth.uid() is not null and auth.uid() in(c.requester_id,c.addressee_id) and not bloqueado(c.requester_id,c.addressee_id)
 $$;
 create or replace function public.buscar_usuarios(p_texto text) returns table(user_id uuid,full_name text,avatar_url text,estado text) language sql stable security definer set search_path=public as $$
- with q as (select trim(p_texto) t, regexp_replace(p_texto,'\\D','','g') digits), candidatos as (
+ with q as (select trim(p_texto) t, regexp_replace(p_texto,'[^0-9]','','g') digits), candidatos as (
  select p.id,p.full_name,p.avatar_url from profiles p left join profile_private pv on pv.user_id=p.id cross join q
  where auth.uid() is not null and p.id<>auth.uid() and not bloqueado(auth.uid(),p.id)
- and (char_length(q.digits)>=8 and right(regexp_replace(coalesce(pv.phone,''),'\\D','','g'),8)=right(q.digits,8) or char_length(q.t)>=3 and p.full_name ilike '%'||q.t||'%') limit 20)
+ and (char_length(q.digits)>=8 and right(regexp_replace(coalesce(pv.phone,''),'[^0-9]','','g'),8)=right(q.digits,8) or char_length(q.t)>=3 and p.full_name ilike '%'||q.t||'%') limit 20)
  select x.id,x.full_name,x.avatar_url, case when c.status='aceptado' then 'aceptado' when c.addressee_id=auth.uid() then 'recibida' when c.requester_id=auth.uid() then 'enviada' end
  from candidatos x left join contacts c on (c.requester_id=auth.uid() and c.addressee_id=x.id) or (c.requester_id=x.id and c.addressee_id=auth.uid())
 $$;

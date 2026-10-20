@@ -76,6 +76,22 @@ export default function Perfil() {
   const [borrando, setBorrando] = useState(false)
   const ubicacion = useCompartirUbicacion()
 
+  async function alternarUbicacion() {
+    if (ubicacion.compartiendo) {
+      await ubicacion.desactivar()
+      return
+    }
+    const resultado = await ubicacion.activar()
+    if (resultado === 'error') {
+      Alert.alert('No pudimos activar la ubicación', 'Probá de nuevo en un rato.')
+    } else if (resultado === 'denegado') {
+      Alert.alert('Permiso de ubicación', 'Activá la ubicación desde Ajustes para compartirla.', [
+        { text: 'Ahora no' },
+        { text: 'Abrir Ajustes', onPress: ubicacion.abrirAjustes },
+      ])
+    }
+  }
+
   useFocusEffect(
     useCallback(() => {
       if (!yo) return
@@ -182,8 +198,15 @@ export default function Perfil() {
 
         <View style={estilos.menu}>
           <Opcion icono={BriefcaseBusiness} texto="Mi currículum y oficios" onPress={() => router.push('/editar-curriculum')} />
-          <Pressable onPress={async()=>{const r=ubicacion.compartiendo?await ubicacion.desactivar():await ubicacion.activar();if(r==='denegado') Alert.alert('Permiso de ubicación','Activá la ubicación desde Ajustes para compartirla.',[{text:'Ahora no'},{text:'Abrir Ajustes',onPress:ubicacion.abrirAjustes}])}} style={estilos.opcion}>
-            <MapPinned size={22} color={colores.tinta}/><View style={{flex:1}}><Texto>Compartir mi ubicación con mis contactos</Texto><Texto suave style={{fontSize:12}}>Es aproximada y se actualiza cada unos 10 minutos con la app abierta.</Texto></View><Texto suave>{ubicacion.compartiendo?'Activo':'Apagado'}</Texto>
+          <Pressable accessibilityRole="switch" accessibilityState={{ checked: ubicacion.compartiendo }} onPress={alternarUbicacion} style={estilos.opcion}>
+            <MapPinned size={22} color={colores.tinta} />
+            <View style={{ flex: 1 }}>
+              <Texto>Compartir mi ubicación con mis contactos</Texto>
+              <Texto suave style={{ fontSize: 14 }}>
+                Es aproximada y se actualiza cada unos 10 minutos con la app abierta.
+              </Texto>
+            </View>
+            <Texto suave>{ubicacion.compartiendo ? 'Activo' : 'Apagado'}</Texto>
           </Pressable>
           <Opcion icono={UserRound} texto="Mis datos" onPress={() => router.push('/editar-perfil')} />
           <Opcion icono={Shield} texto="Privacidad" onPress={() => router.push('/privacidad')} />

@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router'
+import { Redirect, router, useFocusEffect } from 'expo-router'
 import { Search, UsersRound, X } from 'lucide-react-native'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native'
@@ -14,6 +14,11 @@ import { colores, espacio, fuentes, radio } from '../../theme'
 type Orden = 'cercania' | 'calificacion'
 
 export default function Inicio() {
+  return <Redirect href="/(tabs)/mapa" />
+}
+
+// Se conserva durante la transicion de producto; ya no se expone como pestania.
+function InicioOculto() {
   const categorias = useCategorias()
   const { sesion } = useSesion()
   const { origen } = useUbicacion()

@@ -8,6 +8,7 @@ import { useEffect } from 'react'
 import { configurarPush, prepararPushConSesion } from '../lib/push'
 import { SesionProvider, useSesion } from '../lib/sesion'
 import { UbicacionProvider } from '../lib/ubicacion'
+import { CompartirUbicacionProvider } from '../lib/compartirUbicacion'
 import { colores, fuentes } from '../theme'
 
 SplashScreen.preventAutoHideAsync()
@@ -43,6 +44,7 @@ export default function RootLayout() {
 
   return (
     <SesionProvider>
+      <CompartirUbicacionProvider>
       <UbicacionProvider>
         <StatusBar style="dark" />
         <Push />
@@ -70,8 +72,11 @@ export default function RootLayout() {
           <Stack.Screen name="privacidad" options={{ title: 'Privacidad' }} />
           <Stack.Screen name="ajustes-notificaciones" options={{ title: 'Notificaciones' }} />
           <Stack.Screen name="admin" options={{ title: 'Administración' }} />
+          <Stack.Screen name="persona/[id]" options={{ title: 'Perfil' }} />
+          <Stack.Screen name="editar-curriculum" options={{ title: 'Mi currículum' }} />
         </Stack>
       </UbicacionProvider>
+      </CompartirUbicacionProvider>
     </SesionProvider>
   )
 }

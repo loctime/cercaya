@@ -50,7 +50,7 @@ export default function Admin() {
     } else {
       const { data } = await supabase
         .from('provider_profiles')
-        .select('user_id, bio, price_range, status, created_at, perfil:profiles!provider_profiles_user_id_fkey(full_name, avatar_url, zone_label), provider_services(category_id)')
+        .select('user_id, bio, price_range, status, created_at, perfil:profiles!provider_profiles_user_id_fkey(full_name, avatar_url), provider_services(category_id)')
         .eq('status', vista)
         .order('created_at', { ascending: false })
       setPrestadores((data as unknown as Prestador[]) ?? [])
@@ -150,7 +150,7 @@ export default function Admin() {
               <View style={{ flex: 1 }}>
                 <Titulo nivel={3}>{p.perfil?.full_name}</Titulo>
                 <Texto suave style={{ fontSize: 14 }}>
-                  {[p.perfil?.zone_label, `desde ${fecha(p.created_at)}`].filter(Boolean).join(' · ')}
+                  {`desde ${fecha(p.created_at)}`}
                 </Texto>
               </View>
             </View>

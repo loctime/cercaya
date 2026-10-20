@@ -6,7 +6,7 @@ export type Perfil = {
   id: string
   full_name: string
   avatar_url: string | null
-  zone_label: string | null
+  zone_label?: string | null
   is_admin: boolean
   created_at: string
 }
@@ -37,7 +37,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     }
     const { data } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, zone_label, is_admin, created_at')
+      .select('id, full_name, avatar_url, is_admin, created_at')
       .eq('id', userId)
       .single()
     setPerfil(data)

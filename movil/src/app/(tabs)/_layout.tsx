@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics'
 import { router, Tabs } from 'expo-router'
-import { ClipboardList, House, MessageCircle, Plus, UserRound } from 'lucide-react-native'
+import { ClipboardList, House, MapPinned, MessageCircle, Plus, UserRound, Users } from 'lucide-react-native'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { TopBar } from '../../components/TopBar'
 import { useSesion } from '../../lib/sesion'
@@ -40,16 +40,18 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Inicio', tabBarIcon: ({ color }) => <House size={24} color={color} /> }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="pedidos"
-        options={{ title: 'Pedidos', tabBarIcon: ({ color }) => <ClipboardList size={24} color={color} /> }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="pedir"
-        options={{ title: '', tabBarButton: () => <BotonPedir /> }}
+        options={{ href: null }}
       />
+      <Tabs.Screen name="mapa" options={{ title:'Mapa', tabBarIcon:({color})=><MapPinned size={24} color={color}/> }}/>
+      <Tabs.Screen name="contactos" options={{ title:'Contactos', tabBarIcon:({color})=><Users size={24} color={color}/> }}/>
       <Tabs.Screen
         name="mensajes"
         options={{ title: 'Mensajes', tabBarIcon: ({ color }) => <MessageCircle size={24} color={color} /> }}

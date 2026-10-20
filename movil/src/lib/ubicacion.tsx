@@ -7,6 +7,7 @@ import * as Location from 'expo-location'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useSesion } from './sesion'
 import { supabase } from './supabase'
+import { useCompartirUbicacion } from './compartirUbicacion'
 
 export type Zona = { id: number; name: string; lat: number; lng: number }
 
@@ -43,18 +44,19 @@ function leerGuardado(): Origen {
 
 export function UbicacionProvider({ children }: { children: ReactNode }) {
   const { sesion } = useSesion()
+  const { compartiendo, cargando: cargandoCompartir } = useCompartirUbicacion()
   const [origen, setOrigen] = useState<Origen>(leerGuardado)
 
   // Al iniciar sesion, el servidor se entera de la ubicacion que ya teniamos.
   useEffect(() => {
-    if (sesion) supabase.rpc('set_mi_ubicacion', { p_lat: origen.lat, p_lng: origen.lng })
+    if (sesion && !cargandoCompartir && !(compartiendo && origen.fuente === 'manual')) supabase.rpc('set_mi_ubicacion', { p_lat: origen.lat, p_lng: origen.lng })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sesion?.user.id])
+  }, [sesion?.user.id, cargandoCompartir, compartiendo])
 
   async function guardar(nuevo: Origen) {
     setOrigen(nuevo)
     localStorage.setItem(CLAVE, JSON.stringify(nuevo))
-    if (sesion) await supabase.rpc('set_mi_ubicacion', { p_lat: nuevo.lat, p_lng: nuevo.lng })
+    if (sesion && !(compartiendo && nuevo.fuente === 'manual')) await supabase.rpc('set_mi_ubicacion', { p_lat: nuevo.lat, p_lng: nuevo.lng })
   }
 
   async function elegirZona(z: Zona) {

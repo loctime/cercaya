@@ -11,6 +11,7 @@ import {
   Shield,
   ShieldCheck,
   UserRound,
+  MapPinned,
 } from 'lucide-react-native'
 import type { LucideIcon } from 'lucide-react-native'
 import { useCallback, useState } from 'react'
@@ -24,6 +25,7 @@ import { olvidarTokenDeEsteCelular } from '../../lib/push'
 import { abrirPagina } from '../../lib/sitio'
 import { useSesion } from '../../lib/sesion'
 import { supabase } from '../../lib/supabase'
+import { useCompartirUbicacion } from '../../lib/compartirUbicacion'
 import { colores, espacio, fuentes, radio } from '../../theme'
 
 type MiPrestador = {
@@ -72,6 +74,7 @@ export default function Perfil() {
   const yo = sesion?.user.id
   const [prestador, setPrestador] = useState<MiPrestador | null | undefined>(undefined)
   const [borrando, setBorrando] = useState(false)
+  const ubicacion = useCompartirUbicacion()
 
   useFocusEffect(
     useCallback(() => {
@@ -178,6 +181,10 @@ export default function Perfil() {
         )}
 
         <View style={estilos.menu}>
+          <Opcion icono={BriefcaseBusiness} texto="Mi currículum y oficios" onPress={() => router.push('/editar-curriculum')} />
+          <Pressable onPress={async()=>{const r=ubicacion.compartiendo?await ubicacion.desactivar():await ubicacion.activar();if(r==='denegado') Alert.alert('Permiso de ubicación','Activá la ubicación desde Ajustes para compartirla.',[{text:'Ahora no'},{text:'Abrir Ajustes',onPress:ubicacion.abrirAjustes}])}} style={estilos.opcion}>
+            <MapPinned size={22} color={colores.tinta}/><View style={{flex:1}}><Texto>Compartir mi ubicación con mis contactos</Texto><Texto suave style={{fontSize:12}}>Es aproximada y se actualiza cada unos 10 minutos con la app abierta.</Texto></View><Texto suave>{ubicacion.compartiendo?'Activo':'Apagado'}</Texto>
+          </Pressable>
           <Opcion icono={UserRound} texto="Mis datos" onPress={() => router.push('/editar-perfil')} />
           <Opcion icono={Shield} texto="Privacidad" onPress={() => router.push('/privacidad')} />
           <Opcion icono={Bell} texto="Notificaciones" onPress={() => router.push('/ajustes-notificaciones')} />

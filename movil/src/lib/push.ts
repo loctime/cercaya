@@ -17,11 +17,9 @@ const CLAVE_TOKEN = 'cercaya.push.token'
 // Ultimo error al registrar el celular (para mostrarlo en Ajustes).
 export let ultimoErrorPush: string | null = null
 
-export const pushDisponible =
-  Device.isDevice && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient
+export const pushDisponible = Device.isDevice && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient
 
-const projectId: string | undefined =
-  Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId
+const projectId: string | undefined = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId
 
 async function modulo() {
   return import('expo-notifications')
@@ -29,6 +27,9 @@ async function modulo() {
 
 // A donde lleva tocar la notificacion, segun lo que trae en data.
 function destino(data: Record<string, unknown> | undefined) {
+  if (typeof data?.encounter_id === 'string') {
+    return { pathname: '/encuentro/[id]' as const, params: { id: data.encounter_id } }
+  }
   if (typeof data?.conversation_id === 'string') {
     return { pathname: '/chat/[id]' as const, params: { id: data.conversation_id } }
   }

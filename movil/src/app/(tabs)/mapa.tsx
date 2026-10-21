@@ -3,6 +3,7 @@ import { MapPinned } from 'lucide-react-native'
 import { useCallback, useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import MapView, { Marker } from 'react-native-maps'
+import { AvisoEncuentro } from '../../components/AvisoEncuentro'
 import { InterruptoresUbicacion } from '../../components/InterruptoresUbicacion'
 import { RequiereLogin } from '../../components/RequiereLogin'
 import { Texto } from '../../components/ui'
@@ -81,6 +82,7 @@ export default function Mapa() {
         </MapView>
 
         <ScrollView style={estilos.panel} contentContainerStyle={{ gap: espacio.s }}>
+          <AvisoEncuentro />
           <InterruptoresUbicacion />
           {sinNadie && (
             <View style={estilos.aviso}>

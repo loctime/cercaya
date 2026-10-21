@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { Alert, FlatList, Pressable, TextInput, View } from 'react-native'
 import { useFocusEffect, router } from 'expo-router'
 import { Users } from 'lucide-react-native'
+import { AvisoEncuentro } from '../../components/AvisoEncuentro'
 import { RequiereLogin } from '../../components/RequiereLogin'
 import { Boton, Texto, Titulo } from '../../components/ui'
 import { Avatar } from '../../components/Avatar'
@@ -73,6 +74,7 @@ export default function Contactos() {
         keyExtractor={(x) => x.user_id}
         ListHeaderComponent={
           <View style={{ gap: espacio.m }}>
+            <AvisoEncuentro />
             <Titulo>Contactos</Titulo>
             <TextInput
               value={q}

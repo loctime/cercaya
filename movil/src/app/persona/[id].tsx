@@ -7,6 +7,7 @@ import { Avatar } from '../../components/Avatar'
 import { RequiereLogin } from '../../components/RequiereLogin'
 import { Boton, Texto, Titulo } from '../../components/ui'
 import { quitar, solicitar } from '../../lib/contactos'
+import { misEncuentros, pedirEncuentro } from '../../lib/encuentros'
 import { bloquear } from '../../lib/moderacion'
 import { useSesion } from '../../lib/sesion'
 import { supabase } from '../../lib/supabase'
@@ -19,7 +20,14 @@ type Perfil = {
   zone_label: string | null
   estado: 'aceptado' | 'enviada' | 'recibida' | null
 }
-type Experiencia = { id: string; titulo: string; lugar: string | null; desde_anio: number; hasta_anio: number | null; descripcion: string | null }
+type Experiencia = {
+  id: string
+  titulo: string
+  lugar: string | null
+  desde_anio: number
+  hasta_anio: number | null
+  descripcion: string | null
+}
 type Oficio = { label: string }
 
 // Perfil de otra persona. El curriculum y los oficios los ve solo quien es
@@ -79,13 +87,32 @@ export default function Persona() {
 
   function masOpciones() {
     Alert.alert(perfil?.full_name ?? 'Perfil', undefined, [
-      { text: 'Bloquear', style: 'destructive', onPress: () => bloquear(id, perfil?.full_name ?? '', () => router.back()) },
-      { text: 'Denunciar perfil', onPress: () => router.push({ pathname: '/denunciar', params: { tipo: 'perfil', id } }) },
+      {
+        text: 'Bloquear',
+        style: 'destructive',
+        onPress: () => bloquear(id, perfil?.full_name ?? '', () => router.back()),
+      },
+      {
+        text: 'Denunciar perfil',
+        onPress: () => router.push({ pathname: '/denunciar', params: { tipo: 'perfil', id } }),
+      },
       { text: 'Cancelar', style: 'cancel' },
     ])
   }
 
   const esYo = sesion?.user.id === id
+
+  // Si ya hay un encuentro abierto con esta persona, el boton lo abre en vez de pedir otro.
+  async function voyParaAlla() {
+    try {
+      const abiertos = await misEncuentros()
+      const existente = abiertos.find((x) => x.otro_id === id)
+      const encuentro = existente ? existente.id : await pedirEncuentro(id)
+      router.push({ pathname: '/encuentro/[id]', params: { id: encuentro } })
+    } catch (e: any) {
+      Alert.alert('No se pudo pedir', e.message)
+    }
+  }
   const verCurriculum = esYo || perfil?.estado === 'aceptado'
 
   return (
@@ -102,6 +129,7 @@ export default function Persona() {
               </View>
             </View>
 
+            {!esYo && perfil.estado === 'aceptado' && <Boton onPress={voyParaAlla}>Voy para allá</Boton>}
             {!esYo && perfil.estado === 'aceptado' && (
               <Boton variante="secundario" onPress={confirmarQuitar}>
                 Quitar contacto

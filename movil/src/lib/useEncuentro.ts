@@ -20,6 +20,7 @@ export function useEncuentro(id: string) {
   const [error, setError] = useState('')
   const ultima = useRef<Punto | null>(null)
   const avisada = useRef(false)
+  const sincronizarYa = useRef<() => void>(() => {})
 
   // Posicion y brujula, solo mientras la pantalla existe.
   useEffect(() => {
@@ -72,6 +73,7 @@ export function useEncuentro(id: string) {
       }
     }
     const intervalo = setInterval(tick, CADA_MS)
+    sincronizarYa.current = tick
     tick()
     return () => {
       detenido = true
@@ -107,5 +109,15 @@ export function useEncuentro(id: string) {
   const giro = rumbo != null && orientacion != null ? giroFlecha(rumbo, orientacion) : null
   const distancia = yo && otro ? distanciaM(yo.lat, yo.lng, otro.lat, otro.lng) : null
 
-  return { estado, yo, otro, rumbo, giro, distanciaM: distancia, llegaron, error }
+  return {
+    estado,
+    yo,
+    otro,
+    rumbo,
+    giro,
+    distanciaM: distancia,
+    llegaron,
+    error,
+    refrescar: () => sincronizarYa.current(),
+  }
 }

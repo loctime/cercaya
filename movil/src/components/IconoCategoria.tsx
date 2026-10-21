@@ -1,11 +1,14 @@
 import {
   Anvil,
   BrickWall,
+  Flame,
   Hammer as Generico,
+  Key,
   Layers,
   Leaf,
   PaintRoller,
   Scissors,
+  Snowflake,
   Sparkles,
   Trees,
   Wrench,
@@ -25,6 +28,10 @@ const iconos: Record<string, LucideIcon> = {
   sparkles: Sparkles,
   anvil: Anvil,
   layers: Layers,
+  key: Key,
+  hammer: Generico,
+  flame: Flame,
+  snowflake: Snowflake,
 }
 
 // Fondo suave por categoria (tinta oscura encima, contraste AA).
@@ -39,6 +46,10 @@ const fondos = [
   '#F0F9FF',
   '#F1F5F9',
   '#FEF3C7',
+  '#FCE7F3',
+  '#EDE9FE',
+  '#FFEDD5',
+  '#E0F2FE',
 ]
 
 export function iconoDe(nombre: string): LucideIcon {

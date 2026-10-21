@@ -13,6 +13,10 @@ const RUBROS = [
   'Limpieza del hogar',
   'Herrería',
   'Zinguería',
+  'Cerrajería',
+  'Carpintería',
+  'Gasista',
+  'Refrigeración y aire',
 ]
 
 const PASOS = [

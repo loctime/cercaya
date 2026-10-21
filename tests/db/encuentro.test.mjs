@@ -150,6 +150,25 @@ test('tercero: no hace sync ni lee las tablas', async () => {
   await rechaza(como(tercero, 'select * from encounter_positions'), /permission denied/)
 })
 
+test('sync sin posicion (sin GPS todavia): devuelve el estado pero no la del otro ni guarda la mia', async () => {
+  const { a, b, id } = await activo()
+  await sync(a, id, A_POS)
+  const r = await como(b, 'select * from encuentro_sync($1, null, null)', [id]).then((x) => x[0])
+  assert.equal(r.estado, 'activo')
+  assert.equal(r.otro_lat, null, 'sin mandar la suya, no recibe la del otro')
+  assert.equal(r.llegaron, false)
+  const filas = await posiciones(id)
+  assert.equal(filas.length, 1, 'solo la de A')
+  assert.equal(filas[0].user_id, a)
+})
+
+test('sync sin posicion: si el otro corto, igual se entera', async () => {
+  const { a, b, id } = await activo()
+  await como(a, 'select terminar_encuentro($1)', [id])
+  const r = await como(b, 'select * from encuentro_sync($1, null, null)', [id]).then((x) => x[0])
+  assert.equal(r.estado, 'terminado')
+})
+
 test('sync: una posicion fuera de rango se rechaza', async () => {
   const { a, id } = await activo()
   await rechaza(sync(a, id, { lat: 91, lng: 0 }), /Posicion invalida/)

@@ -4,6 +4,7 @@ import * as Location from 'expo-location'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Vibration } from 'react-native'
 import { ESTADOS_FINALES, sincronizarEncuentro, type EstadoSync } from './encuentros'
+import { decidirTrasSync, lecturaFresca } from './decisionEncuentro'
 import { distanciaM, giroFlecha, rumboGrados } from './geo'
 import { detenerServicioEncuentro, iniciarServicioEncuentro } from './tareaEncuentro'
 
@@ -20,6 +21,7 @@ export function useEncuentro(id: string, nombreOtro?: string, soySolicitante?: b
   const [orientacion, setOrientacion] = useState<number | null>(null)
   const [error, setError] = useState('')
   const ultima = useRef<Punto | null>(null)
+  const tomadaEn = useRef<number | null>(null)
   const avisada = useRef(false)
   const sincronizarYa = useRef<() => void>(() => {})
 
@@ -38,6 +40,7 @@ export function useEncuentro(id: string, nombreOtro?: string, soySolicitante?: b
         { accuracy: Location.Accuracy.High, timeInterval: 4000, distanceInterval: 2 },
         (loc) => {
           ultima.current = { lat: loc.coords.latitude, lng: loc.coords.longitude }
+          tomadaEn.current = Date.now()
           setYo(ultima.current)
         },
       )
@@ -61,7 +64,8 @@ export function useEncuentro(id: string, nombreOtro?: string, soySolicitante?: b
   useEffect(() => {
     let detenido = false
     async function tick() {
-      const p = ultima.current
+      // Una lectura vieja no se manda como si fuera de ahora (sin GPS: null).
+      const p = lecturaFresca(tomadaEn.current, Date.now()) ? ultima.current : null
       try {
         const r = await sincronizarEncuentro(id, p?.lat ?? null, p?.lng ?? null)
         if (detenido) return
@@ -104,16 +108,19 @@ export function useEncuentro(id: string, nombreOtro?: string, soySolicitante?: b
     }
   }, [id, fase, nombreOtro, soySolicitante])
 
-  // Aviso de llegada: una vez por llegada.
+  // Aviso de llegada: una vez por llegada. Se vuelve a armar recien al separarse
+  // mas de 100 m, asi el GPS oscilando alrededor de los 50 m no lo repite.
   const llegaron = !!estado?.llegaron
   useEffect(() => {
-    if (llegaron && !avisada.current) {
+    if (!estado) return
+    const decision = decidirTrasSync(estado, avisada.current)
+    if (decision.avisarLlegada) {
       avisada.current = true
       Vibration.vibrate([0, 500, 200, 500, 200, 500])
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
     }
-    if (!llegaron) avisada.current = false
-  }, [llegaron])
+    if (decision.rearmar) avisada.current = false
+  }, [estado])
 
   const otro: Punto | null = useMemo(
     () => (estado?.otro_lat != null && estado.otro_lng != null ? { lat: estado.otro_lat, lng: estado.otro_lng } : null),

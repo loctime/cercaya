@@ -5,7 +5,7 @@
 // global del bundle, tambien cuando Android despierta la app en segundo plano.
 import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
-import { decidirTrasSync } from './decisionEncuentro'
+import { decidirTrasSync, errorTerminal } from './decisionEncuentro'
 import { avisoLocal } from './push'
 import { supabase } from './supabase'
 
@@ -79,11 +79,11 @@ TaskManager.defineTask(TAREA, async ({ data, error }) => {
       p_lng: ultima.coords.longitude,
     })
     if (errorRpc) {
-      // El encuentro ya no es mio o no existe: no dejar el servicio huerfano.
-      if (errorRpc.message.includes('No sos parte')) await detenerServicioEncuentro(encuentroId)
+      // Sesion cerrada o encuentro que ya no es mio: no dejar el servicio huerfano.
+      if (errorTerminal(errorRpc.message)) await detenerServicioEncuentro(encuentroId)
       return
     }
-    const r = (filas as { estado: string; llegaron: boolean }[])[0]
+    const r = (filas as { estado: string; llegaron: boolean; distancia_m: number | null }[])[0]
     if (!r) return
     const decision = decidirTrasSync(r, localStorage.getItem(CLAVE_AVISADO) === '1')
     if (decision.avisarLlegada) {
@@ -91,7 +91,7 @@ TaskManager.defineTask(TAREA, async ({ data, error }) => {
       const nombre = (localStorage.getItem(CLAVE_NOMBRE) ?? 'tu contacto').split(' ')[0]
       await avisoLocal('Llegaron', `Ya estás con ${nombre}`)
     }
-    if (!r.llegaron) localStorage.removeItem(CLAVE_AVISADO)
+    if (decision.rearmar) localStorage.removeItem(CLAVE_AVISADO)
     if (decision.detener) await detenerServicioEncuentro(encuentroId)
   } catch {
     // Sin red: se reintenta en el proximo punto.

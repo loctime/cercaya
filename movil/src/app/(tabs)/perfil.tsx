@@ -22,6 +22,7 @@ import { fecha, useCategorias } from '../../lib/datos'
 import { borrarMisArchivos } from '../../lib/imagenes'
 import { olvidarTokenDeEsteCelular } from '../../lib/push'
 import { abrirPagina } from '../../lib/sitio'
+import { detenerServicioEncuentro } from '../../lib/tareaEncuentro'
 import { useSesion } from '../../lib/sesion'
 import { supabase } from '../../lib/supabase'
 import { InterruptoresUbicacion } from '../../components/InterruptoresUbicacion'
@@ -106,6 +107,7 @@ export default function Perfil() {
             const { error } = await supabase.rpc('borrar_mi_cuenta')
             setBorrando(false)
             if (error) return Alert.alert('No pudimos eliminar la cuenta', 'Probá de nuevo en un rato.')
+            await detenerServicioEncuentro()
             await supabase.auth.signOut()
           },
         },
@@ -209,6 +211,7 @@ export default function Perfil() {
             texto="Cerrar sesión"
             onPress={async () => {
               await olvidarTokenDeEsteCelular().catch(() => {})
+              await detenerServicioEncuentro()
               await supabase.auth.signOut()
             }}
           />

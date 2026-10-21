@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Vibration } from 'react-native'
 import { ESTADOS_FINALES, sincronizarEncuentro, type EstadoSync } from './encuentros'
 import { distanciaM, giroFlecha, rumboGrados } from './geo'
+import { detenerServicioEncuentro, iniciarServicioEncuentro } from './tareaEncuentro'
 
 const CADA_MS = 5000
 const ETIQUETA_PANTALLA = 'cercaya-encuentro'
@@ -13,7 +14,7 @@ type Punto = { lat: number; lng: number }
 
 // Estado en vivo de un encuentro: mi posicion, la brujula y el sync cada 5 s.
 // Mientras el encuentro esta activo mantiene la pantalla prendida.
-export function useEncuentro(id: string) {
+export function useEncuentro(id: string, nombreOtro?: string, soySolicitante?: boolean) {
   const [estado, setEstado] = useState<EstadoSync | null>(null)
   const [yo, setYo] = useState<Punto | null>(null)
   const [orientacion, setOrientacion] = useState<number | null>(null)
@@ -89,6 +90,19 @@ export function useEncuentro(id: string) {
       deactivateKeepAwake(ETIQUETA_PANTALLA).catch(() => {})
     }
   }, [activo])
+
+  // Servicio de ubicacion en segundo plano: quien pide lo arranca al pedir (el
+  // servidor descarta las posiciones mientras esta pendiente); quien responde, al
+  // aceptar. Se detiene cuando el encuentro termina por cualquier via.
+  const fase = estado?.estado
+  useEffect(() => {
+    if (!fase || !nombreOtro) return
+    if (fase === 'activo' || (fase === 'pendiente' && soySolicitante)) {
+      iniciarServicioEncuentro(id, nombreOtro)
+    } else if (ESTADOS_FINALES.includes(fase)) {
+      detenerServicioEncuentro(id)
+    }
+  }, [id, fase, nombreOtro, soySolicitante])
 
   // Aviso de llegada: una vez por llegada.
   const llegaron = !!estado?.llegaron

@@ -39,6 +39,17 @@ function destino(data: Record<string, unknown> | undefined) {
   return '/notificaciones' as const
 }
 
+// Aviso inmediato en este celular, con sonido: sirve con la pantalla bloqueada
+// (por ejemplo, "Llegaron" en el encuentro).
+export async function avisoLocal(titulo: string, cuerpo: string) {
+  if (!pushDisponible) return
+  const N = await modulo()
+  await N.scheduleNotificationAsync({
+    content: { title: titulo, body: cuerpo, sound: 'default' },
+    trigger: { channelId: 'default' },
+  })
+}
+
 export async function configurarPush() {
   if (!pushDisponible) return () => {}
   const N = await modulo()

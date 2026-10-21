@@ -2,7 +2,7 @@
   "expo": {
     "name": "CercaYa",
     "slug": "cercaya",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -43,7 +43,10 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "CercaYa usa tu ubicación para mostrarte prestadores y pedidos cerca tuyo. Nunca mostramos tu ubicación exacta a otras personas."
+          "locationWhenInUsePermission": "CercaYa usa tu ubicación para mostrar tu zona aproximada y, solo cuando aceptás un encuentro, compartir tu ubicación exacta y en vivo con esa persona. Nunca mostramos tu ubicación exacta a otras personas.",
+          "isAndroidForegroundServiceEnabled": true,
+          "isAndroidBackgroundLocationEnabled": false,
+          "androidForegroundServiceIcon": "./assets/notification-icon.png"
         }
       ],
       [

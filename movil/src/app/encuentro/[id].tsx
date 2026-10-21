@@ -1,3 +1,4 @@
+import * as Device from 'expo-device'
 import { router, useLocalSearchParams } from 'expo-router'
 import { ArrowUp, MapPinned } from 'lucide-react-native'
 import { useEffect, useRef, useState } from 'react'
@@ -20,6 +21,10 @@ import { colores, espacio, radio } from '../../theme'
 
 const SIN_SENAL_MS = 2 * 60 * 1000
 
+// Estas marcas cierran las apps en segundo plano si no se las excluye del ahorro de bateria.
+const AGRESIVAS = /xiaomi|redmi|poco|huawei|honor|oppo|realme|vivo|oneplus/i
+const esAgresiva = !!Device.manufacturer && AGRESIVAS.test(Device.manufacturer)
+
 const MENSAJE_FINAL: Partial<Record<EstadoEncuentro, string>> = {
   terminado: 'El encuentro terminó.',
   rechazado: 'No se aceptó el encuentro.',
@@ -29,8 +34,12 @@ const MENSAJE_FINAL: Partial<Record<EstadoEncuentro, string>> = {
 // Pantalla del encuentro ("Voy para alla"): pedir, aceptar y verse en vivo.
 export default function Encuentro() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const { estado, yo, otro, rumbo, giro, distanciaM, llegaron, error, refrescar } = useEncuentro(id)
   const [resumen, setResumen] = useState<EncuentroResumen | null>(null)
+  const { estado, yo, otro, rumbo, giro, distanciaM, llegaron, error, refrescar } = useEncuentro(
+    id,
+    resumen?.otro_nombre,
+    resumen?.soy_solicitante,
+  )
   const mapa = useRef<MapView>(null)
 
   // Quien es el otro y si pedi yo; se vuelve a leer cuando cambia el estado.
@@ -184,7 +193,13 @@ export default function Encuentro() {
             <Boton variante="secundario" onPress={() => accion(() => terminarEncuentro(id))}>
               Terminar
             </Boton>
-            <Texto suave>Mantené la app abierta para que {primerNombre} te vea.</Texto>
+            <Texto suave>Podés guardar el celular: seguimos compartiendo hasta que termine.</Texto>
+            {esAgresiva && (
+              <Texto suave>
+                En tu celular, para que no se corte con la pantalla apagada: Ajustes, Apps, CercaYa, Ahorro de batería,
+                Sin restricciones.
+              </Texto>
+            )}
           </>
         )}
       </ScrollView>

@@ -33,3 +33,13 @@ export const solicitar = (id: string) => rpc('solicitar_contacto', { p_destino: 
 export const responder = (id: string, acepta: boolean) =>
   rpc('responder_contacto', { p_solicitud: id, p_acepta: acepta })
 export const quitar = (id: string) => rpc('quitar_contacto', { p_otro: id })
+export type PersonaCerca = {
+  user_id: string
+  full_name: string
+  avatar_url: string | null
+  zona: string | null
+  distancia_km: number | string | null
+  oficios: string[]
+  estado: 'enviada' | 'recibida' | null
+}
+export const personasCerca = (radioKm = 15) => rpc<PersonaCerca[]>('personas_cerca', { p_radio_km: radioKm })

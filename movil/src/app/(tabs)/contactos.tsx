@@ -8,21 +8,29 @@ import { Avatar } from '../../components/Avatar'
 import {
   buscar,
   cargarContactos,
+  personasCerca,
   responder,
   solicitar,
   type Contacto,
+  type PersonaCerca,
   type ResultadoBusqueda,
 } from '../../lib/contactos'
+import { textoDistancia } from '../../lib/datos'
 import { colores, espacio } from '../../theme'
 export default function Contactos() {
   const [lista, setLista] = useState<Contacto[]>([]),
     [q, setQ] = useState(''),
     [resultados, setResultados] = useState<ResultadoBusqueda[]>([]),
-    [mensaje, setMensaje] = useState('')
-  const cargar = () =>
-    cargarContactos()
+    [mensaje, setMensaje] = useState(''),
+    [cerca, setCerca] = useState<PersonaCerca[] | null>(null)
+  const cargar = () => {
+    personasCerca()
+      .then(setCerca)
+      .catch(() => setCerca([]))
+    return cargarContactos()
       .then(setLista)
       .catch(() => {})
+  }
   useFocusEffect(
     useCallback(() => {
       cargar()
@@ -70,7 +78,14 @@ export default function Contactos() {
               value={q}
               onChangeText={hacerBuscar}
               placeholder="Buscar por nombre o teléfono"
-              style={{ borderWidth: 1, borderColor: colores.borde, padding: 14, borderRadius: 12 }}
+              placeholderTextColor={colores.texto2}
+              style={{
+                borderWidth: 1,
+                borderColor: colores.borde,
+                padding: 14,
+                borderRadius: 12,
+                color: colores.tinta,
+              }}
             />
             {recibidas.length > 0 && (
               <>
@@ -98,6 +113,35 @@ export default function Contactos() {
               </Fila>
             ))}
             <Titulo nivel={3}>Mis contactos</Titulo>
+          </View>
+        }
+        ListFooterComponent={
+          <View style={{ gap: espacio.m, marginTop: espacio.xl }}>
+            <Titulo nivel={3}>Cerca tuyo</Titulo>
+            {cerca === null && <Texto suave>Buscando gente cerca…</Texto>}
+            {cerca?.length === 0 && (
+              <Texto suave>
+                Todavía no hay nadie cerca que haya elegido aparecer. Podés activar "Aparecer para gente cerca" en tu
+                Perfil.
+              </Texto>
+            )}
+            {cerca?.map((x) => (
+              <Pressable
+                key={x.user_id}
+                onPress={() => router.push({ pathname: '/persona/[id]', params: { id: x.user_id } })}
+              >
+                <Fila x={x}>
+                  {x.estado ? (
+                    <Texto suave>{x.estado === 'enviada' ? 'Pendiente' : 'Te agregó'}</Texto>
+                  ) : (
+                    <Boton onPress={() => accion(() => solicitar(x.user_id))}>Agregar</Boton>
+                  )}
+                </Fila>
+                <Texto suave style={{ fontSize: 14, marginLeft: 52, marginTop: -4 }}>
+                  {[x.zona, textoDistancia(x.distancia_km), x.oficios.join(', ')].filter(Boolean).join(' · ')}
+                </Texto>
+              </Pressable>
+            ))}
           </View>
         }
         renderItem={({ item }) => (

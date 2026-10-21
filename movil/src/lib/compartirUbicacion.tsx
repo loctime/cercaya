@@ -6,36 +6,45 @@ import { useSesion } from './sesion'
 import { debeActualizar } from './tiempo'
 type Estado = {
   compartiendo: boolean
+  publico: boolean
   cargando: boolean
   activar: () => Promise<'ok' | 'denegado' | 'error'>
   desactivar: () => Promise<void>
+  activarPublico: () => Promise<'ok' | 'denegado' | 'error'>
+  desactivarPublico: () => Promise<void>
   abrirAjustes: () => Promise<void>
 }
 const C = createContext<Estado>({
   compartiendo: false,
+  publico: false,
   cargando: true,
   activar: async () => 'error',
   desactivar: async () => {},
+  activarPublico: async () => 'error',
+  desactivarPublico: async () => {},
   abrirAjustes: () => Linking.openSettings(),
 })
 export function CompartirUbicacionProvider({ children }: { children: ReactNode }) {
   const { sesion } = useSesion()
   const [compartiendo, set] = useState(false),
+    [publico, setPublico] = useState(false),
     [cargando, setCargando] = useState(true),
     [ultima, setUltima] = useState<string | null>(null)
   useEffect(() => {
     if (!sesion) {
       set(false)
+      setPublico(false)
       setCargando(false)
       return
     }
     supabase
       .from('profile_private')
-      .select('share_location,location_updated_at')
+      .select('share_location,es_publico,location_updated_at')
       .eq('user_id', sesion.user.id)
       .single()
       .then(({ data }) => {
         set(!!data?.share_location)
+        setPublico(!!data?.es_publico)
         setUltima(data?.location_updated_at ?? null)
         setCargando(false)
       })
@@ -67,17 +76,50 @@ export function CompartirUbicacionProvider({ children }: { children: ReactNode }
     await supabase.from('profile_private').update({ share_location: false }).eq('user_id', sesion?.user.id)
     set(false)
   }
+  // Activar cualquiera de los dos pide el permiso y manda la posicion una vez.
+  async function encender(columna: 'share_location' | 'es_publico', avisar: (v: boolean) => void) {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') return 'denegado' as const
+      await enviar()
+      const { error } = await supabase
+        .from('profile_private')
+        .update({ [columna]: true })
+        .eq('user_id', sesion?.user.id)
+      if (error) throw error
+      avisar(true)
+      return 'ok' as const
+    } catch {
+      return 'error' as const
+    }
+  }
+  const activarPublico = () => encender('es_publico', setPublico)
+  async function desactivarPublico() {
+    await supabase.from('profile_private').update({ es_publico: false }).eq('user_id', sesion?.user.id)
+    setPublico(false)
+  }
   useEffect(() => {
-    if (!compartiendo) return
+    if (!compartiendo && !publico) return
     const refrescar = () => {
       if (AppState.currentState === 'active' && debeActualizar(ultima, new Date())) enviar().catch(() => {})
     }
     refrescar()
     const i = setInterval(refrescar, 60000)
     return () => clearInterval(i)
-  }, [compartiendo, ultima])
+  }, [compartiendo, publico, ultima])
   return (
-    <C.Provider value={{ compartiendo, cargando, activar, desactivar, abrirAjustes: () => Linking.openSettings() }}>
+    <C.Provider
+      value={{
+        compartiendo,
+        publico,
+        cargando,
+        activar,
+        desactivar,
+        activarPublico,
+        desactivarPublico,
+        abrirAjustes: () => Linking.openSettings(),
+      }}
+    >
       {children}
     </C.Provider>
   )

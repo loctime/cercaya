@@ -283,3 +283,78 @@ test('perfil_social: la zona solo se ve si el contacto esta compartiendo', async
   assert.equal(extrano.estado, null)
   assert.ok((await como(b, 'select * from perfil_social($1)', [b]))[0].zone_label, 'uno mismo')
 })
+
+// ------------------------------------------------------------- cerca tuyo
+
+async function publico(nombreBase, { lat, lng }, { es = true } = {}) {
+  const u = await db.usuario(nombre(nombreBase), { lat, lng })
+  await db.sql('update profile_private set es_publico = $2, location_updated_at = now() where user_id = $1', [u, es])
+  return u
+}
+const CERQUITA = { lat: -33.49, lng: -60.02 }
+const LEJOS = { lat: -32.95, lng: -60.65 }
+const MEDIO = { lat: -33.2, lng: -60.0 } // ~31 km
+
+test('cerca tuyo: apagado por defecto, solo se ve a quien se hizo publico', async () => {
+  const yo = await db.usuario(nombre('Yo'), RAMALLO)
+  const nuevo = await db.usuario(nombre('Nuevo'), CERQUITA)
+  assert.equal((await db.uno('select es_publico from profile_private where user_id = $1', [nuevo])).es_publico, false)
+  const visible = await publico('Visible', CERQUITA)
+  const ids = (await como(yo, 'select * from personas_cerca(15)')).map((r) => r.user_id)
+  assert.ok(ids.includes(visible))
+  assert.ok(!ids.includes(nuevo), 'quien no activo no aparece')
+  assert.ok(!ids.includes(yo), 'uno mismo no aparece')
+})
+
+test('cerca tuyo: no devuelve coordenadas ni telefono, solo barrio, distancia y oficios', async () => {
+  const yo = await db.usuario(nombre('Yo'), RAMALLO)
+  const otro = await publico('Plomero', CERQUITA)
+  await db.sql("insert into oficios (user_id, label) values ($1, 'Plomería')", [otro])
+  const fila = (await como(yo, 'select * from personas_cerca(15)')).find((r) => r.user_id === otro)
+  assert.deepEqual(Object.keys(fila), ['user_id', 'full_name', 'avatar_url', 'zona', 'distancia_km', 'oficios', 'estado'])
+  assert.deepEqual(fila.oficios, ['Plomería'])
+  assert.ok(fila.zona)
+})
+
+test('cerca tuyo: respeta el radio, contactos, bloqueos y vencimiento', async () => {
+  const yo = await db.usuario(nombre('Yo'), RAMALLO)
+  const lejos = await publico('Lejano', LEJOS)
+  const medio = await publico('Medio', MEDIO)
+  const bloqueado = await publico('Bloqueado', CERQUITA)
+  const contacto = await publico('Contacto', CERQUITA)
+  const viejo = await publico('Viejo', CERQUITA)
+  const [{ solicitar_contacto: s }] = await como(yo, 'select solicitar_contacto($1)', [contacto])
+  await como(contacto, 'select responder_contacto($1, true)', [s])
+  await como(bloqueado, 'insert into blocks (blocker_id, blocked_id) values ($1, $2)', [bloqueado, yo])
+  await db.sql("update profile_private set location_updated_at = now() - interval '8 days' where user_id = $1", [viejo])
+  const ids = (await como(yo, 'select * from personas_cerca(15)')).map((r) => r.user_id)
+  assert.ok(!ids.includes(lejos), 'fuera del radio')
+  assert.ok(!ids.includes(bloqueado), 'bloqueado')
+  assert.ok(!ids.includes(contacto), 'los contactos ya tienen su lugar en el mapa')
+  assert.ok(!ids.includes(viejo), 'ubicacion de hace mas de 7 dias')
+  assert.ok(!ids.includes(medio), 'a 31 km queda afuera con radio 15')
+  const ampliado = (await como(yo, 'select * from personas_cerca(50)')).map((r) => r.user_id)
+  assert.ok(ampliado.includes(medio), 'con radio 50 aparece')
+  const tope = (await como(yo, 'select * from personas_cerca(100000)')).map((r) => r.user_id)
+  assert.ok(!tope.includes(lejos), 'el radio nunca pasa de 50 km')
+})
+
+test('cerca tuyo: muestra el estado de una solicitud pendiente y sin ubicacion propia no devuelve nada', async () => {
+  const yo = await db.usuario(nombre('Yo'), RAMALLO)
+  const otro = await publico('Pendiente', CERQUITA)
+  await como(yo, 'select solicitar_contacto($1)', [otro])
+  assert.equal((await como(yo, 'select * from personas_cerca(15)')).find((r) => r.user_id === otro).estado, 'enviada')
+  const sinUbicacion = await db.usuario(nombre('Sin ubicacion'))
+  assert.equal((await como(sinUbicacion, 'select * from personas_cerca(15)')).length, 0)
+})
+
+test('cerca tuyo: tope de 30 resultados, radio acotado, invitados afuera', async () => {
+  const yo = await db.usuario(nombre('Yo'), RAMALLO)
+  for (let i = 0; i < 32; i++) await publico('Masa', CERQUITA)
+  assert.equal((await como(yo, 'select * from personas_cerca(15)')).length, 30)
+  await como(yo, 'select * from personas_cerca(100000)')
+  await rechaza(como(null, 'select * from personas_cerca(15)'), /permission denied/)
+  const otro = await db.usuario(nombre('Otro'), RAMALLO)
+  const ajeno = await como(otro, 'update profile_private set es_publico = true where user_id = $1 returning 1', [yo])
+  assert.equal(ajeno.length, 0, 'nadie se hace publico por otro')
+})

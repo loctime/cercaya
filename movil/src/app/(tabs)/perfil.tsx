@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   UserRound,
   MapPinned,
+  UsersRound,
 } from 'lucide-react-native'
 import type { LucideIcon } from 'lucide-react-native'
 import { useCallback, useState } from 'react'
@@ -45,7 +46,12 @@ const ESTADO: Record<MiPrestador['status'], { texto: string; detalle: string; fo
     fondo: '#FFF1E5',
     tinta: '#9A3412',
   },
-  aprobado: { texto: 'Aprobado', detalle: 'Tus servicios están visibles para los vecinos.', fondo: '#ECFDF5', tinta: '#047857' },
+  aprobado: {
+    texto: 'Aprobado',
+    detalle: 'Tus servicios están visibles para los vecinos.',
+    fondo: '#ECFDF5',
+    tinta: '#047857',
+  },
   suspendido: {
     texto: 'Suspendido',
     detalle: 'Tu perfil de prestador está suspendido. Escribinos a soporte para revisarlo.',
@@ -75,6 +81,21 @@ export default function Perfil() {
   const [prestador, setPrestador] = useState<MiPrestador | null | undefined>(undefined)
   const [borrando, setBorrando] = useState(false)
   const ubicacion = useCompartirUbicacion()
+
+  async function alternarPublico() {
+    if (ubicacion.publico) {
+      await ubicacion.desactivarPublico()
+      return
+    }
+    const resultado = await ubicacion.activarPublico()
+    if (resultado === 'error') Alert.alert('No pudimos activarlo', 'Probá de nuevo en un rato.')
+    else if (resultado === 'denegado') {
+      Alert.alert('Permiso de ubicación', 'Activá la ubicación desde Ajustes para aparecer cerca de otras personas.', [
+        { text: 'Ahora no' },
+        { text: 'Abrir Ajustes', onPress: ubicacion.abrirAjustes },
+      ])
+    }
+  }
 
   async function alternarUbicacion() {
     if (ubicacion.compartiendo) {
@@ -167,14 +188,19 @@ export default function Perfil() {
                 : ESTADO[prestador.status].detalle}
             </Texto>
             <Texto fuerte style={{ fontSize: 14 }}>
-              {prestador.categorias.map((id) => categorias.find((c) => c.id === id)?.name).filter(Boolean).join(' · ')}
+              {prestador.categorias
+                .map((id) => categorias.find((c) => c.id === id)?.name)
+                .filter(Boolean)
+                .join(' · ')}
             </Texto>
             {prestador.status === 'aprobado' && (
               <View style={estilos.metricas}>
                 <Metrica valor={String(prestador.contactos_recibidos)} etiqueta="Contactos" />
                 <Metrica valor={String(prestador.trabajos_realizados)} etiqueta="Trabajos" />
                 <Metrica
-                  valor={prestador.calificacion != null ? `★ ${Number(prestador.calificacion).toLocaleString('es-AR')}` : '—'}
+                  valor={
+                    prestador.calificacion != null ? `★ ${Number(prestador.calificacion).toLocaleString('es-AR')}` : '—'
+                  }
                   etiqueta={`${prestador.cant_resenas} reseñas`}
                 />
               </View>
@@ -197,8 +223,17 @@ export default function Perfil() {
         )}
 
         <View style={estilos.menu}>
-          <Opcion icono={BriefcaseBusiness} texto="Mi currículum y oficios" onPress={() => router.push('/editar-curriculum')} />
-          <Pressable accessibilityRole="switch" accessibilityState={{ checked: ubicacion.compartiendo }} onPress={alternarUbicacion} style={estilos.opcion}>
+          <Opcion
+            icono={BriefcaseBusiness}
+            texto="Mi currículum y oficios"
+            onPress={() => router.push('/editar-curriculum')}
+          />
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: ubicacion.compartiendo }}
+            onPress={alternarUbicacion}
+            style={estilos.opcion}
+          >
             <MapPinned size={22} color={colores.tinta} />
             <View style={{ flex: 1 }}>
               <Texto>Compartir mi ubicación con mis contactos</Texto>
@@ -208,10 +243,27 @@ export default function Perfil() {
             </View>
             <Texto suave>{ubicacion.compartiendo ? 'Activo' : 'Apagado'}</Texto>
           </Pressable>
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: ubicacion.publico }}
+            onPress={alternarPublico}
+            style={estilos.opcion}
+          >
+            <UsersRound size={22} color={colores.tinta} />
+            <View style={{ flex: 1 }}>
+              <Texto>Aparecer para gente cerca</Texto>
+              <Texto suave style={{ fontSize: 14 }}>
+                Cualquiera con cuenta puede ver tu nombre, tus oficios y tu barrio, nunca tu punto exacto.
+              </Texto>
+            </View>
+            <Texto suave>{ubicacion.publico ? 'Activo' : 'Apagado'}</Texto>
+          </Pressable>
           <Opcion icono={UserRound} texto="Mis datos" onPress={() => router.push('/editar-perfil')} />
           <Opcion icono={Shield} texto="Privacidad" onPress={() => router.push('/privacidad')} />
           <Opcion icono={Bell} texto="Notificaciones" onPress={() => router.push('/ajustes-notificaciones')} />
-          {perfil?.is_admin && <Opcion icono={ShieldCheck} texto="Administración" onPress={() => router.push('/admin')} />}
+          {perfil?.is_admin && (
+            <Opcion icono={ShieldCheck} texto="Administración" onPress={() => router.push('/admin')} />
+          )}
           <Opcion icono={CircleHelp} texto="Ayuda y soporte" onPress={() => abrirPagina('soporte')} />
           <Opcion icono={ScrollText} texto="Términos y condiciones" onPress={() => abrirPagina('terminos')} />
           <Opcion icono={FileText} texto="Política de privacidad" onPress={() => abrirPagina('privacidad')} />
@@ -237,7 +289,9 @@ function Metrica({ valor, etiqueta }: { valor: string; etiqueta: string }) {
   return (
     <View style={estilos.metrica}>
       <Titulo nivel={3}>{valor}</Titulo>
-      <Texto suave style={{ fontSize: 14 }}>{etiqueta}</Texto>
+      <Texto suave style={{ fontSize: 14 }}>
+        {etiqueta}
+      </Texto>
     </View>
   )
 }
@@ -246,11 +300,23 @@ const estilos = StyleSheet.create({
   contenido: { padding: espacio.l, gap: espacio.l, paddingBottom: espacio.xxl },
   cabecera: { flexDirection: 'row', alignItems: 'center', gap: espacio.m },
   servicios: { gap: espacio.s, padding: espacio.l, borderRadius: radio.l, backgroundColor: colores.naranjaSuave },
-  misServicios: { gap: espacio.s, padding: espacio.l, borderRadius: radio.l, borderWidth: 1, borderColor: colores.borde },
+  misServicios: {
+    gap: espacio.s,
+    padding: espacio.l,
+    borderRadius: radio.l,
+    borderWidth: 1,
+    borderColor: colores.borde,
+  },
   badge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radio.full },
   badgeTexto: { fontFamily: fuentes.textoFuerte, fontSize: 13 },
   metricas: { flexDirection: 'row', gap: espacio.s },
-  metrica: { flex: 1, alignItems: 'center', paddingVertical: espacio.s, borderRadius: radio.m, backgroundColor: colores.grupo },
+  metrica: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: espacio.s,
+    borderRadius: radio.m,
+    backgroundColor: colores.grupo,
+  },
   menu: { borderRadius: radio.m, borderWidth: 1, borderColor: colores.borde, overflow: 'hidden' },
   opcion: {
     flexDirection: 'row',

@@ -306,12 +306,15 @@ test('cerca tuyo: apagado por defecto, solo se ve a quien se hizo publico', asyn
   assert.ok(!ids.includes(yo), 'uno mismo no aparece')
 })
 
-test('cerca tuyo: no devuelve coordenadas ni telefono, solo barrio, distancia y oficios', async () => {
+test('cerca tuyo: devuelve solo barrio, distancia, oficios y un punto difuminado de ~1,6 km', async () => {
   const yo = await db.usuario(nombre('Yo'), RAMALLO)
   const otro = await publico('Plomero', CERQUITA)
   await db.sql("insert into oficios (user_id, label) values ($1, 'Plomería')", [otro])
   const fila = (await como(yo, 'select * from personas_cerca(15)')).find((r) => r.user_id === otro)
-  assert.deepEqual(Object.keys(fila), ['user_id', 'full_name', 'avatar_url', 'zona', 'distancia_km', 'oficios', 'estado'])
+  assert.deepEqual(Object.keys(fila), ['user_id', 'full_name', 'avatar_url', 'zona', 'distancia_km', 'oficios', 'estado', 'lat', 'lng'])
+  assert.notEqual(fila.lat, CERQUITA.lat, 'no es el punto real')
+  assert.ok(Math.abs(fila.lat - CERQUITA.lat) <= 0.015 / 2 + 1e-9)
+  assert.ok(Math.abs(fila.lng - CERQUITA.lng) <= 0.015 / 2 + 1e-9)
   assert.deepEqual(fila.oficios, ['Plomería'])
   assert.ok(fila.zona)
 })

@@ -41,5 +41,7 @@ export type PersonaCerca = {
   distancia_km: number | string | null
   oficios: string[]
   estado: 'enviada' | 'recibida' | null
+  lat: number
+  lng: number
 }
 export const personasCerca = (radioKm = 15) => rpc<PersonaCerca[]>('personas_cerca', { p_radio_km: radioKm })

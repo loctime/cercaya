@@ -176,6 +176,7 @@ const estilos = StyleSheet.create({
   grilla: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
   categoria: {
     width: '23%',
+    maxWidth: '23.5%',
     flexGrow: 1,
     aspectRatio: 0.95,
     borderRadius: radio.m,

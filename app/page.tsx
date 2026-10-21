@@ -11,6 +11,8 @@ const RUBROS = [
   'Pintura',
   'Albañilería',
   'Limpieza del hogar',
+  'Herrería',
+  'Zinguería',
 ]
 
 const PASOS = [

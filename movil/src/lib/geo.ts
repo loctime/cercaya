@@ -28,9 +28,11 @@ export function giroFlecha(rumbo: number, orientacion: number): number {
 }
 
 export function textoDistancia(metros: number): string {
-  if (metros < 1000) return `${Math.round(metros)} m`
+  const m = Math.round(metros)
+  if (m < 1000) return `${m} m`
   const km = metros / 1000
-  const texto = Number.isInteger(Math.round(km * 10) / 10) ? String(Math.round(km)) : (Math.round(km * 10) / 10).toFixed(1)
+  const redondeado = Math.round(km * 10) / 10
+  const texto = Number.isInteger(redondeado) ? String(Math.round(km)) : redondeado.toFixed(1)
   return `${texto.replace('.', ',')} km`
 }
 

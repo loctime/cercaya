@@ -29,6 +29,7 @@ test('giroFlecha: da el camino corto al cruzar 0/360 y queda en [0, 360)', () =>
 test('textoDistancia: metros, kilometros y coma decimal', () => {
   assert.equal(textoDistancia(0), '0 m')
   assert.equal(textoDistancia(850), '850 m')
+  assert.equal(textoDistancia(999.6), '1 km')
   assert.equal(textoDistancia(1000), '1 km')
   assert.equal(textoDistancia(1530), '1,5 km')
   assert.equal(textoDistancia(12000), '12 km')

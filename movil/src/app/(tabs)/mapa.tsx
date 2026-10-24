@@ -16,7 +16,6 @@ import {
   Image,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -61,6 +60,7 @@ export default function Mapa() {
   const [filtro, setFiltro] = useState<FiltroMapa>('todos')
   const [seleccionado, setSeleccionado] = useState<PersonaSeleccionada | null>(null)
   const [modalPrivacidad, setModalPrivacidad] = useState(false)
+  const [avisoVacioDescartado, setAvisoVacioDescartado] = useState(false)
 
   const mapaRef = useRef<MapView>(null)
 
@@ -150,6 +150,7 @@ export default function Mapa() {
     }
   }
 
+  const total = contactos.length + cerca.length
   const mostrarContactos = filtro === 'todos' || filtro === 'contactos'
   const mostrarCerca = filtro === 'todos' || filtro === 'cerca'
   const sinNadie = contactos.length === 0 && cerca.length === 0
@@ -187,7 +188,7 @@ export default function Mapa() {
                 <Marker
                   key={`c-${c.user_id}`}
                   coordinate={{ latitude: lat, longitude: lng }}
-                  anchor={{ x: 0.5, y: 1 }}
+                  anchor={{ x: 0.5, y: 0.5 }}
                   onPress={() => seleccionarItem({ tipo: 'contacto', data: c }, lat, lng)}
                 >
                   <MarcadorPin
@@ -211,7 +212,7 @@ export default function Mapa() {
                 <Marker
                   key={`p-${p.user_id}`}
                   coordinate={{ latitude: lat, longitude: lng }}
-                  anchor={{ x: 0.5, y: 1 }}
+                  anchor={{ x: 0.5, y: 0.5 }}
                   onPress={() => seleccionarItem({ tipo: 'cerca', data: p }, lat, lng)}
                 >
                   <MarcadorPin
@@ -225,13 +226,9 @@ export default function Mapa() {
             })}
         </MapView>
 
-        {/* Barra superior de filtros y acceso a privacidad */}
+        {/* Barra superior unificada: Segmented control + Botón de privacidad */}
         <View style={estilos.barraSuperior}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={estilos.scrollFiltros}
-          >
+          <View style={estilos.segmentado}>
             <Pressable
               accessibilityRole="tab"
               accessibilityState={{ selected: filtro === 'todos' }}
@@ -239,13 +236,13 @@ export default function Mapa() {
                 Haptics.selectionAsync()
                 setFiltro('todos')
               }}
-              style={[estilos.chipFiltro, filtro === 'todos' && estilos.chipFiltroActivo]}
+              style={[estilos.itemSegmento, filtro === 'todos' && estilos.itemSegmentoActivo]}
             >
               <Texto
-                fuerte
-                style={[estilos.textoFiltro, filtro === 'todos' && estilos.textoFiltroActivo]}
+                fuerte={filtro === 'todos'}
+                style={[estilos.textoSegmento, filtro === 'todos' && estilos.textoSegmentoActivo]}
               >
-                Todos ({contactos.length + cerca.length})
+                Todos{total > 0 ? ` (${total})` : ''}
               </Texto>
             </Pressable>
 
@@ -256,17 +253,16 @@ export default function Mapa() {
                 Haptics.selectionAsync()
                 setFiltro('contactos')
               }}
-              style={[estilos.chipFiltro, filtro === 'contactos' && estilos.chipFiltroActivo]}
+              style={[estilos.itemSegmento, filtro === 'contactos' && estilos.itemSegmentoActivo]}
             >
-              <View style={[estilos.puntoFiltro, { backgroundColor: colores.naranja }]} />
               <Texto
-                fuerte
+                fuerte={filtro === 'contactos'}
                 style={[
-                  estilos.textoFiltro,
-                  filtro === 'contactos' && estilos.textoFiltroActivo,
+                  estilos.textoSegmento,
+                  filtro === 'contactos' && estilos.textoSegmentoActivo,
                 ]}
               >
-                Contactos ({contactos.length})
+                Contactos{contactos.length > 0 ? ` (${contactos.length})` : ''}
               </Texto>
             </Pressable>
 
@@ -277,19 +273,18 @@ export default function Mapa() {
                 Haptics.selectionAsync()
                 setFiltro('cerca')
               }}
-              style={[estilos.chipFiltro, filtro === 'cerca' && estilos.chipFiltroActivo]}
+              style={[estilos.itemSegmento, filtro === 'cerca' && estilos.itemSegmentoActivo]}
             >
-              <View style={[estilos.puntoFiltro, { backgroundColor: '#2563EB' }]} />
               <Texto
-                fuerte
-                style={[estilos.textoFiltro, filtro === 'cerca' && estilos.textoFiltroActivo]}
+                fuerte={filtro === 'cerca'}
+                style={[estilos.textoSegmento, filtro === 'cerca' && estilos.textoSegmentoActivo]}
               >
-                Cerca ({cerca.length})
+                Cerca{cerca.length > 0 ? ` (${cerca.length})` : ''}
               </Texto>
             </Pressable>
-          </ScrollView>
+          </View>
 
-          {/* Boton visibilidad / privacidad */}
+          {/* Botón de visibilidad / privacidad */}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Ajustes de visibilidad en el mapa"
@@ -299,29 +294,57 @@ export default function Mapa() {
             }}
             style={estilos.botonPrivacidad}
           >
-            <Shield size={19} color={colores.tinta} />
-            <View
-              style={[
-                estilos.puntoEstadoPrivacidad,
-                { backgroundColor: compartiendo || publico ? colores.exito : colores.texto2 },
-              ]}
-            />
+            <Shield size={18} color={colores.tinta} />
+            {compartiendo || publico ? (
+              <View
+                style={[estilos.puntoEstadoPrivacidad, { backgroundColor: colores.exito }]}
+              />
+            ) : null}
           </Pressable>
         </View>
+
+        {/* Micro aviso flotante si el mapa está vacío, sutil y descartable */}
+        {sinNadie && !cargando && !seleccionado && !avisoVacioDescartado && (
+          <View style={estilos.avisoVacioMini}>
+            <Users size={14} color={colores.texto2} />
+            <Texto suave style={{ fontSize: 12 }}>
+              Sin personas en el mapa
+            </Texto>
+            <View style={estilos.puntoSeparador} />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/(tabs)/contactos')}
+              hitSlop={8}
+            >
+              <Texto fuerte style={{ fontSize: 12, color: colores.naranjaOscuro }}>
+                Buscar
+              </Texto>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Ocultar aviso"
+              onPress={() => setAvisoVacioDescartado(true)}
+              hitSlop={8}
+              style={{ marginLeft: 2 }}
+            >
+              <X size={13} color={colores.texto2} />
+            </Pressable>
+          </View>
+        )}
 
         {/* Banner de aviso de encuentro si hay alguno en curso */}
         <View style={estilos.contenedorAvisoEncuentro} pointerEvents="box-none">
           <AvisoEncuentro />
         </View>
 
-        {/* Boton flotante para centrar mapa en mi posicion */}
+        {/* Botón flotante para centrar mapa en mi posición */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Centrar en mi ubicación"
           onPress={centrarEnMi}
           style={[estilos.fabGps, seleccionado ? estilos.fabGpsArriba : null]}
         >
-          <Crosshair size={22} color={colores.naranjaOscuro} />
+          <Crosshair size={20} color={colores.tinta} />
         </Pressable>
 
         {/* Detalle flotante de la persona seleccionada */}
@@ -343,37 +366,11 @@ export default function Mapa() {
           </View>
         )}
 
-        {/* Cartel sutil cuando no hay nadie */}
-        {sinNadie && !cargando && !seleccionado && (
-          <View style={estilos.tarjetaVacia}>
-            <View style={estilos.iconoVacioMini}>
-              <Users size={20} color={colores.naranjaOscuro} />
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Texto fuerte style={{ fontSize: 14 }}>
-                No hay nadie en el mapa todavía
-              </Texto>
-              <Texto suave style={{ fontSize: 12, lineHeight: 16 }}>
-                Agregá contactos o activá tu visibilidad para que los vecinos te vean.
-              </Texto>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push('/(tabs)/contactos')}
-              style={estilos.botonBuscarContactos}
-            >
-              <Texto fuerte style={{ fontSize: 13, color: colores.naranjaOscuro }}>
-                Buscar
-              </Texto>
-            </Pressable>
-          </View>
-        )}
-
         {/* Error discreto si falla la carga */}
         {!!error && (
           <View style={estilos.bannerError}>
             <Texto suave style={{ fontSize: 13, color: colores.peligro, flex: 1 }}>
-              No pudimos actualizar los contactos: {error}
+              No pudimos actualizar el mapa: {error}
             </Texto>
             <Pressable onPress={cargar}>
               <Texto fuerte style={{ fontSize: 13, color: colores.naranjaOscuro }}>
@@ -383,11 +380,11 @@ export default function Mapa() {
           </View>
         )}
 
-        {/* Modal de Privacidad y Ajustes de Ubicacion */}
+        {/* Modal de Privacidad y Ajustes de Ubicación */}
         <Modal
           visible={modalPrivacidad}
           transparent
-          animationType="fade"
+          animationType="slide"
           onRequestClose={() => setModalPrivacidad(false)}
         >
           <Pressable style={estilos.modalOverlay} onPress={() => setModalPrivacidad(false)}>
@@ -452,24 +449,33 @@ function MarcadorPin({
   const inicial = iniciales(nombre)
 
   return (
-    <View style={[estilosPin.contenedor, desactualizada && { opacity: 0.6 }]}>
+    <View
+      style={[
+        estilosPin.contenedor,
+        desactualizada && { opacity: 0.65 },
+        seleccionado && estilosPin.contenedorSeleccionado,
+      ]}
+    >
       <View
         style={[
           estilosPin.burbuja,
           { borderColor: colorBorde, backgroundColor: colorFondo },
-          seleccionado && estilosPin.burbujaSeleccionada,
+          seleccionado && { borderColor: colorBorde, borderWidth: 3 },
         ]}
       >
         {avatarUrl ? (
           <Image source={{ uri: avatarUrl }} style={estilosPin.avatar} resizeMode="cover" />
         ) : (
-          <Text style={[estilosPin.inicial, { color: esContacto ? colores.tinta : '#1E40AF' }]}>
+          <Text
+            style={[
+              estilosPin.inicial,
+              { color: esContacto ? colores.naranjaOscuro : '#1E40AF' },
+            ]}
+          >
             {inicial}
           </Text>
         )}
-        <View style={[estilosPin.puntoTipo, { backgroundColor: colorBorde }]} />
       </View>
-      <View style={[estilosPin.pico, { borderTopColor: colorBorde }]} />
     </View>
   )
 }
@@ -505,12 +511,15 @@ function TarjetaPersona({
 
   return (
     <View style={estilosTarjeta.tarjeta}>
+      {/* Tirador decorativo de sheet */}
+      <View style={estilosTarjeta.tirador} />
+
       {/* Cabecera */}
       <View style={estilosTarjeta.filaCabecera}>
-        <Avatar nombre={nombre} url={avatarUrl} tam={48} />
+        <Avatar nombre={nombre} url={avatarUrl} tam={44} />
         <View style={{ flex: 1, gap: 2 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Titulo nivel={3} numberOfLines={1} style={{ flexShrink: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <Titulo nivel={3} numberOfLines={1} style={{ flexShrink: 1, fontSize: 16 }}>
               {nombre}
             </Titulo>
             <View
@@ -530,7 +539,7 @@ function TarjetaPersona({
               </Texto>
             </View>
           </View>
-          <Texto suave style={{ fontSize: 13 }} numberOfLines={1}>
+          <Texto suave style={{ fontSize: 12 }} numberOfLines={1}>
             {subtitulo}
           </Texto>
         </View>
@@ -538,9 +547,10 @@ function TarjetaPersona({
           accessibilityRole="button"
           accessibilityLabel="Cerrar detalle"
           onPress={onCerrar}
+          hitSlop={8}
           style={estilosTarjeta.botonCerrar}
         >
-          <X size={18} color={colores.texto2} />
+          <X size={16} color={colores.texto2} />
         </Pressable>
       </View>
 
@@ -549,18 +559,18 @@ function TarjetaPersona({
         <View style={estilosTarjeta.filaOficios}>
           {oficios.slice(0, 3).map((o) => (
             <View key={o} style={estilosTarjeta.chipOficio}>
-              <Texto style={{ fontSize: 12, color: colores.tinta }}>{o}</Texto>
+              <Texto style={{ fontSize: 11, color: colores.tinta }}>{o}</Texto>
             </View>
           ))}
           {oficios.length > 3 && (
-            <Texto suave style={{ fontSize: 12, alignSelf: 'center' }}>
+            <Texto suave style={{ fontSize: 11, alignSelf: 'center' }}>
               +{oficios.length - 3}
             </Texto>
           )}
         </View>
       )}
 
-      {/* Botones de accion directa */}
+      {/* Botones de acción directa */}
       <View style={estilosTarjeta.filaAcciones}>
         {esContacto ? (
           <>
@@ -569,7 +579,7 @@ function TarjetaPersona({
               icono={Navigation}
               cargando={cargandoAccion}
               onPress={onVoyParaAlla}
-              style={estilosTarjeta.botonMitad}
+              style={estilosTarjeta.botonAccion}
             >
               Voy para allá
             </Boton>
@@ -577,7 +587,7 @@ function TarjetaPersona({
               variante="secundario"
               icono={User}
               onPress={onVerPerfil}
-              style={estilosTarjeta.botonMitad}
+              style={estilosTarjeta.botonAccion}
             >
               Ver perfil
             </Boton>
@@ -588,7 +598,7 @@ function TarjetaPersona({
               variante="primario"
               icono={User}
               onPress={onVerPerfil}
-              style={estilosTarjeta.botonMitad}
+              style={estilosTarjeta.botonAccion}
             >
               Ver perfil
             </Boton>
@@ -598,18 +608,18 @@ function TarjetaPersona({
                 icono={UserPlus}
                 cargando={cargandoAccion}
                 onPress={onAgregar}
-                style={estilosTarjeta.botonMitad}
+                style={estilosTarjeta.botonAccion}
               >
                 Agregar
               </Boton>
             )}
             {estado === 'enviada' && (
-              <Boton variante="secundario" deshabilitado style={estilosTarjeta.botonMitad}>
+              <Boton variante="secundario" deshabilitado style={estilosTarjeta.botonAccion}>
                 Enviada
               </Boton>
             )}
             {estado === 'recibida' && (
-              <Boton variante="secundario" onPress={onVerPerfil} style={estilosTarjeta.botonMitad}>
+              <Boton variante="secundario" onPress={onVerPerfil} style={estilosTarjeta.botonAccion}>
                 Responder
               </Boton>
             )}
@@ -631,58 +641,52 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
     gap: espacio.s,
   },
-  scrollFiltros: {
+  segmentado: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingRight: 4,
-  },
-  chipFiltro: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 38,
-    paddingHorizontal: 12,
-    borderRadius: radio.full,
     backgroundColor: colores.fondo,
-    borderWidth: 1.5,
+    borderRadius: radio.full,
+    padding: 3,
+    borderWidth: 1,
     borderColor: colores.borde,
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  chipFiltroActivo: {
-    backgroundColor: colores.naranjaSuave,
-    borderColor: colores.naranja,
+  itemSegmento: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    borderRadius: radio.full,
   },
-  textoFiltro: {
-    fontSize: 13,
+  itemSegmentoActivo: {
+    backgroundColor: colores.naranjaSuave,
+  },
+  textoSegmento: {
+    fontSize: 12,
     color: colores.texto2,
     fontFamily: fuentes.textoMedio,
   },
-  textoFiltroActivo: {
+  textoSegmentoActivo: {
     color: colores.naranjaOscuro,
     fontFamily: fuentes.textoFuerte,
   },
-  puntoFiltro: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
   botonPrivacidad: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: radio.full,
     backgroundColor: colores.fondo,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colores.borde,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
@@ -692,34 +696,60 @@ const estilos = StyleSheet.create({
     right: 7,
     width: 7,
     height: 7,
-    borderRadius: 4,
+    borderRadius: 3.5,
+  },
+  avisoVacioMini: {
+    position: 'absolute',
+    top: 54,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colores.fondo,
+    borderRadius: radio.full,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colores.borde,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  puntoSeparador: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: colores.texto2,
+    opacity: 0.5,
   },
   contenedorAvisoEncuentro: {
     position: 'absolute',
-    top: 56,
+    top: 54,
     left: espacio.m,
     right: espacio.m,
   },
   fabGps: {
     position: 'absolute',
     right: espacio.m,
-    bottom: espacio.xl,
-    width: 48,
-    height: 48,
+    bottom: espacio.l,
+    width: 42,
+    height: 42,
     borderRadius: radio.full,
     backgroundColor: colores.fondo,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colores.borde,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.12,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
+    elevation: 4,
   },
   fabGpsArriba: {
-    bottom: 220,
+    bottom: 210,
   },
   contenedorDetalle: {
     position: 'absolute',
@@ -727,42 +757,9 @@ const estilos = StyleSheet.create({
     left: espacio.m,
     right: espacio.m,
   },
-  tarjetaVacia: {
-    position: 'absolute',
-    bottom: espacio.m,
-    left: espacio.m,
-    right: espacio.m,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: espacio.m,
-    backgroundColor: colores.fondo,
-    borderRadius: radio.l,
-    padding: espacio.m,
-    borderWidth: 1,
-    borderColor: colores.borde,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  iconoVacioMini: {
-    width: 40,
-    height: 40,
-    borderRadius: radio.full,
-    backgroundColor: colores.naranjaSuave,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  botonBuscarContactos: {
-    paddingHorizontal: espacio.m,
-    paddingVertical: espacio.s,
-    backgroundColor: colores.naranjaSuave,
-    borderRadius: radio.m,
-  },
   bannerError: {
     position: 'absolute',
-    top: 56,
+    top: 54,
     left: espacio.m,
     right: espacio.m,
     backgroundColor: '#FEF2F2',
@@ -805,76 +802,58 @@ const estilosPin = StyleSheet.create({
   contenedor: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 44,
-    height: 52,
+    width: 40,
+    height: 40,
+  },
+  contenedorSeleccionado: {
+    transform: [{ scale: 1.15 }],
   },
   burbuja: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colores.fondo,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 4,
   },
-  burbujaSeleccionada: {
-    transform: [{ scale: 1.15 }],
-    borderWidth: 3.5,
-    shadowOpacity: 0.35,
-    shadowRadius: 5,
-    elevation: 7,
-  },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
   },
   inicial: {
     fontFamily: fuentes.titulo,
-    fontSize: 13,
-  },
-  puntoTipo: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    borderWidth: 1.5,
-    borderColor: colores.fondo,
-  },
-  pico: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 6,
-    borderStyle: 'solid',
-    backgroundColor: 'transparent',
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    marginTop: -1,
+    fontSize: 12,
   },
 })
 
 const estilosTarjeta = StyleSheet.create({
   tarjeta: {
     backgroundColor: colores.fondo,
-    borderRadius: radio.l,
+    borderRadius: 20,
     padding: espacio.m,
-    gap: espacio.m,
+    gap: espacio.s,
     borderWidth: 1,
     borderColor: colores.borde,
     shadowColor: '#000',
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
+  },
+  tirador: {
+    width: 32,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+    alignSelf: 'center',
+    marginBottom: 2,
   },
   filaCabecera: {
     flexDirection: 'row',
@@ -882,7 +861,7 @@ const estilosTarjeta = StyleSheet.create({
     gap: espacio.m,
   },
   badge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: radio.full,
   },
@@ -890,8 +869,8 @@ const estilosTarjeta = StyleSheet.create({
     fontSize: 11,
   },
   botonCerrar: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: radio.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -901,11 +880,12 @@ const estilosTarjeta = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+    paddingLeft: 56,
   },
   chipOficio: {
     backgroundColor: colores.grupo,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: radio.full,
     borderWidth: 1,
     borderColor: colores.borde,
@@ -913,9 +893,10 @@ const estilosTarjeta = StyleSheet.create({
   filaAcciones: {
     flexDirection: 'row',
     gap: espacio.s,
+    marginTop: 2,
   },
-  botonMitad: {
+  botonAccion: {
     flex: 1,
-    minHeight: 46,
+    minHeight: 44,
   },
 })

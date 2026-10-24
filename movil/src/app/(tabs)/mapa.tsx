@@ -10,7 +10,7 @@ import {
   Users,
   X,
 } from 'lucide-react-native'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, type ReactNode } from 'react'
 import {
   Alert,
   Image,
@@ -24,6 +24,8 @@ import MapView, { Marker } from 'react-native-maps'
 import { Avatar, iniciales } from '../../components/Avatar'
 import { AvisoEncuentro } from '../../components/AvisoEncuentro'
 import { InterruptoresUbicacion } from '../../components/InterruptoresUbicacion'
+import { MapaTrabajo } from '../../components/MapaTrabajo'
+import { SelectorModo, type ModoMapa } from '../../components/SelectorModo'
 import { RequiereLogin } from '../../components/RequiereLogin'
 import { Boton, Texto, Titulo } from '../../components/ui'
 import {
@@ -47,7 +49,39 @@ type PersonaSeleccionada =
   | { tipo: 'contacto'; data: ContactoMapa }
   | { tipo: 'cerca'; data: PersonaCerca }
 
+const CLAVE_MODO = 'cercaya.modoMapa'
+
+function modoGuardado(): ModoMapa {
+  try {
+    return localStorage.getItem(CLAVE_MODO) === 'trabajo' ? 'trabajo' : 'amigos'
+  } catch {
+    return 'amigos'
+  }
+}
+
+// Interruptor Amigos | Trabajo: el mapa de siempre, o el buscador de servicios.
 export default function Mapa() {
+  const [modo, setModo] = useState<ModoMapa>(modoGuardado)
+  const cambiar = (m: ModoMapa) => {
+    setModo(m)
+    localStorage.setItem(CLAVE_MODO, m)
+  }
+  const selector = <SelectorModo modo={modo} onCambiar={cambiar} />
+  if (modo === 'trabajo') {
+    return (
+      <RequiereLogin
+        icono={MapPinned}
+        titulo="Buscá quién te ayuda"
+        texto="Entrá para ver quién cerca puede resolver lo que necesitás."
+      >
+        <MapaTrabajo selector={selector} />
+      </RequiereLogin>
+    )
+  }
+  return <MapaAmigos selector={selector} />
+}
+
+function MapaAmigos({ selector }: { selector: ReactNode }) {
   const { origen } = useUbicacion()
   const { compartiendo, publico } = useCompartirUbicacion()
 
@@ -302,6 +336,8 @@ export default function Mapa() {
             ) : null}
           </Pressable>
         </View>
+
+        {selector}
 
         {/* Micro aviso flotante si el mapa está vacío, sutil y descartable */}
         {sinNadie && !cargando && !seleccionado && !avisoVacioDescartado && (
@@ -634,7 +670,7 @@ const estilos = StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: colores.fondo },
   barraSuperior: {
     position: 'absolute',
-    top: espacio.s,
+    top: 56, // debajo del selector Amigos | Trabajo
     left: espacio.m,
     right: espacio.m,
     flexDirection: 'row',

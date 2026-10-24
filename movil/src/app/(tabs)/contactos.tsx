@@ -7,6 +7,7 @@ import { Boton, Texto, Titulo } from '../../components/ui'
 import { Avatar } from '../../components/Avatar'
 import {
   buscar,
+  buscarHabilidadesCerca,
   cargarContactos,
   personasCerca,
   responder,
@@ -21,6 +22,7 @@ export default function Contactos() {
   const [lista, setLista] = useState<Contacto[]>([]),
     [q, setQ] = useState(''),
     [resultados, setResultados] = useState<ResultadoBusqueda[]>([]),
+    [resultadosHabilidad, setResultadosHabilidad] = useState<PersonaCerca[]>([]),
     [mensaje, setMensaje] = useState(''),
     [cerca, setCerca] = useState<PersonaCerca[] | null>(null)
   const cargar = () => {
@@ -39,13 +41,19 @@ export default function Contactos() {
   async function hacerBuscar(t: string) {
     setQ(t)
     setMensaje('')
-    if (t.trim().length < 3) return setResultados([])
+    if (t.trim().length < 2) {
+      setResultados([])
+      setResultadosHabilidad([])
+      return
+    }
     try {
-      const r = await buscar(t)
+      const [r, h] = await Promise.all([t.trim().length >= 3 ? buscar(t) : Promise.resolve([]), buscarHabilidadesCerca(t)])
       setResultados(r)
-      if (r.length === 0) setMensaje('No encontramos a nadie con ese nombre o teléfono.')
+      setResultadosHabilidad(h)
+      if (r.length === 0 && h.length === 0) setMensaje('No encontramos a nadie con ese nombre, teléfono o habilidad cerca.')
     } catch (e: any) {
       setResultados([])
+      setResultadosHabilidad([])
       setMensaje(`No pudimos buscar: ${e.message}`)
     }
   }
@@ -54,6 +62,7 @@ export default function Contactos() {
       await fn()
       await cargar()
       setResultados(q.length >= 3 ? await buscar(q) : [])
+      setResultadosHabilidad(q.length >= 2 ? await buscarHabilidadesCerca(q) : [])
     } catch (e: any) {
       Alert.alert('No se pudo completar', e.message)
     }
@@ -77,7 +86,7 @@ export default function Contactos() {
             <TextInput
               value={q}
               onChangeText={hacerBuscar}
-              placeholder="Buscar por nombre o teléfono"
+              placeholder="Buscá a alguien o una tarea (ej. lamparita)"
               placeholderTextColor={colores.texto2}
               style={{
                 borderWidth: 1,
@@ -112,6 +121,25 @@ export default function Contactos() {
                 )}
               </Fila>
             ))}
+            {resultadosHabilidad.length > 0 && (
+              <>
+                <Titulo nivel={3}>Personas cerca que pueden ayudarte</Titulo>
+                {resultadosHabilidad.map((x) => (
+                  <Pressable key={x.user_id} onPress={() => router.push({ pathname: '/persona/[id]', params: { id: x.user_id } })}>
+                    <Fila x={x}>
+                      {x.estado ? (
+                        <Texto suave>{x.estado === 'enviada' ? 'Pendiente' : 'Te agregó'}</Texto>
+                      ) : (
+                        <Boton onPress={() => accion(() => solicitar(x.user_id))}>Agregar</Boton>
+                      )}
+                    </Fila>
+                    <Texto suave style={{ fontSize: 14, marginLeft: 52, marginTop: -4 }}>
+                      {[x.zona, textoDistancia(x.distancia_km), x.oficios.join(', ')].filter(Boolean).join(' · ')}
+                    </Texto>
+                  </Pressable>
+                ))}
+              </>
+            )}
             <Titulo nivel={3}>Mis contactos</Titulo>
           </View>
         }

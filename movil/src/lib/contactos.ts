@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { ResultadoServicio } from './trabajo'
 export type ContactoMapa = {
   user_id: string
   full_name: string
@@ -47,3 +48,5 @@ export type PersonaCerca = {
 export const personasCerca = (radioKm = 15) => rpc<PersonaCerca[]>('personas_cerca', { p_radio_km: radioKm })
 export const buscarHabilidadesCerca = (texto: string, radioKm = 15) =>
   rpc<PersonaCerca[]>('buscar_habilidades_cerca', { p_texto: texto, p_radio_km: radioKm })
+export const buscarServicio = (texto: string, radioKm = 15) =>
+  rpc<ResultadoServicio[]>('buscar_servicio', { p_texto: texto, p_radio_km: radioKm })

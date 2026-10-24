@@ -5,6 +5,7 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
+import { ActualizacionesProvider } from '../lib/actualizaciones'
 import { configurarPush, prepararPushConSesion } from '../lib/push'
 import { SesionProvider, useSesion } from '../lib/sesion'
 import { UbicacionProvider } from '../lib/ubicacion'
@@ -43,6 +44,7 @@ export default function RootLayout() {
   if (!fuentesListas) return null
 
   return (
+    <ActualizacionesProvider>
     <SesionProvider>
       <CompartirUbicacionProvider>
       <UbicacionProvider>
@@ -79,5 +81,6 @@ export default function RootLayout() {
       </UbicacionProvider>
       </CompartirUbicacionProvider>
     </SesionProvider>
+    </ActualizacionesProvider>
   )
 }

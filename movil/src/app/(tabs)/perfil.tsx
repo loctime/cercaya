@@ -18,6 +18,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Avatar } from '../../components/Avatar'
 import { RequiereLogin } from '../../components/RequiereLogin'
 import { Boton, Texto, Titulo } from '../../components/ui'
+import * as Updates from 'expo-updates'
+import { useActualizaciones, versionInstalada } from '../../lib/actualizaciones'
 import { fecha, useCategorias } from '../../lib/datos'
 import { borrarMisArchivos } from '../../lib/imagenes'
 import { olvidarTokenDeEsteCelular } from '../../lib/push'
@@ -220,8 +222,47 @@ export default function Perfil() {
         <Boton variante="peligro" onPress={eliminarCuenta} cargando={borrando}>
           Eliminar mi cuenta
         </Boton>
+
+        <VersionApp />
       </ScrollView>
     </RequiereLogin>
+  )
+}
+
+function VersionApp() {
+  const { buscar, buscando } = useActualizaciones()
+  const [msg, setMsg] = useState('')
+  const id = Updates.updateId ? ` · ${Updates.updateId.slice(0, 8)}` : ''
+  return (
+    <View style={{ alignItems: 'center', gap: espacio.s }}>
+      <Texto suave style={{ fontSize: 14 }}>
+        CercaYa {versionInstalada}
+        {id}
+      </Texto>
+      <Boton
+        variante="secundario"
+        cargando={buscando}
+        onPress={async () => {
+          const r = await buscar()
+          setMsg(
+            r === 'sin_novedades'
+              ? 'Ya tenés la última versión.'
+              : r === 'error'
+                ? 'No se pudo buscar. Probá de nuevo con internet.'
+                : r === 'no_disponible'
+                  ? 'Las actualizaciones no funcionan en modo desarrollo.'
+                  : '',
+          )
+        }}
+      >
+        Buscar actualización
+      </Boton>
+      {!!msg && (
+        <Texto suave style={{ fontSize: 14 }}>
+          {msg}
+        </Texto>
+      )}
+    </View>
   )
 }
 

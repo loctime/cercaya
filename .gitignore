@@ -54,3 +54,6 @@ GoogleService-Info.plist
 *cuenta-servicio*.json
 
 .impeccable/
+
+# maquetas del brainstorming
+.superpowers/

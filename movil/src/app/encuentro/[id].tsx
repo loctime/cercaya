@@ -20,7 +20,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import MapView, { Marker } from 'react-native-maps'
+import MapView, { Marker, Polyline } from 'react-native-maps'
 import { Avatar, iniciales } from '../../components/Avatar'
 import { RequiereLogin } from '../../components/RequiereLogin'
 import { Boton, Texto, Titulo } from '../../components/ui'
@@ -248,10 +248,23 @@ export default function Encuentro() {
                 showsCompass={false}
                 toolbarEnabled={false}
               >
+                {/* Linea directa en tiempo real entre ambos */}
+                {yo && otro && (
+                  <Polyline
+                    coordinates={[
+                      { latitude: yo.lat, longitude: yo.lng },
+                      { latitude: otro.lat, longitude: otro.lng },
+                    ]}
+                    strokeColor={colores.naranja}
+                    strokeWidth={3}
+                    lineDashPattern={[6, 4]}
+                  />
+                )}
+
                 {yo && (
                   <Marker
                     coordinate={{ latitude: yo.lat, longitude: yo.lng }}
-                    anchor={{ x: 0.5, y: 1 }}
+                    anchor={{ x: 0.5, y: 0.5 }}
                     title="Vos"
                   >
                     <PinMarcadorSimple
@@ -264,7 +277,7 @@ export default function Encuentro() {
                 {otro && (
                   <Marker
                     coordinate={{ latitude: otro.lat, longitude: otro.lng }}
-                    anchor={{ x: 0.5, y: 1 }}
+                    anchor={{ x: 0.5, y: 0.5 }}
                     title={nombre}
                     opacity={sinSenal ? 0.55 : 1}
                   >
@@ -333,38 +346,39 @@ export default function Encuentro() {
               </View>
             )}
 
-            {/* Botones de acción */}
-            <View style={estilos.filaAcciones}>
-              {otro && (
-                <Boton
-                  variante="primario"
-                  icono={ExternalLink}
-                  onPress={comoLlegar}
-                  style={estilos.botonMitad}
-                >
-                  Cómo llegar
-                </Boton>
-              )}
-              {resumen?.otro_id && (
-                <Boton
-                  variante="secundario"
-                  icono={MessageCircle}
-                  cargando={cargandoChat}
-                  onPress={irAlChat}
-                  style={estilos.botonMitad}
-                >
-                  Chat
-                </Boton>
-              )}
-            </View>
+            {/* Acciones principales del encuentro */}
+            {resumen?.otro_id && (
+              <Boton
+                variante="primario"
+                icono={MessageCircle}
+                cargando={cargandoChat}
+                onPress={irAlChat}
+              >
+                Abrir chat con {primerNombre}
+              </Boton>
+            )}
 
             <Boton
               variante="peligro"
               onPress={() => accion(() => terminarEncuentro(id))}
-              style={{ marginTop: espacio.xs }}
             >
               Terminar encuentro
             </Boton>
+
+            {/* Opcion secundaria para quien va en auto y quiere navegacion por voz */}
+            {otro && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Abrir ruta para auto en Google Maps"
+                onPress={comoLlegar}
+                style={estilos.enlaceGoogleMaps}
+              >
+                <ExternalLink size={14} color={colores.texto2} />
+                <Texto suave style={{ fontSize: 13 }}>
+                  Abrir ruta para auto en Google Maps
+                </Texto>
+              </Pressable>
+            )}
 
             <View style={estilos.cajaAvisos}>
               <Texto suave style={{ fontSize: 12, lineHeight: 18, textAlign: 'center' }}>
@@ -402,12 +416,16 @@ function PinMarcadorSimple({
         {avatarUrl ? (
           <Image source={{ uri: avatarUrl }} style={estilosPin.avatar} resizeMode="cover" />
         ) : (
-          <Text style={[estilosPin.inicial, { color: esPropio ? colores.tinta : '#1E40AF' }]}>
+          <Text
+            style={[
+              estilosPin.inicial,
+              { color: esPropio ? colores.naranjaOscuro : '#1E40AF' },
+            ]}
+          >
             {inicial}
           </Text>
         )}
       </View>
-      <View style={[estilosPin.pico, { borderTopColor: colorBorde }]} />
     </View>
   )
 }
@@ -493,8 +511,8 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
   },
   contenedorMapa: {
-    height: 240,
-    borderRadius: radio.l,
+    height: 320,
+    borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colores.borde,
@@ -554,9 +572,13 @@ const estilos = StyleSheet.create({
     borderRadius: radio.l,
     alignItems: 'center',
   },
-  filaAcciones: {
+  enlaceGoogleMaps: {
     flexDirection: 'row',
-    gap: espacio.s,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: espacio.s,
+    marginTop: 2,
   },
   cajaAvisos: {
     backgroundColor: colores.grupo,
@@ -572,7 +594,7 @@ const estilosPin = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: 40,
-    height: 48,
+    height: 40,
   },
   burbuja: {
     width: 36,
@@ -584,7 +606,7 @@ const estilosPin = StyleSheet.create({
     backgroundColor: colores.fondo,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 4,
   },
@@ -595,18 +617,6 @@ const estilosPin = StyleSheet.create({
   },
   inicial: {
     fontFamily: fuentes.titulo,
-    fontSize: 13,
-  },
-  pico: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 6,
-    borderStyle: 'solid',
-    backgroundColor: 'transparent',
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    marginTop: -1,
+    fontSize: 12,
   },
 })

@@ -45,3 +45,5 @@ export type PersonaCerca = {
   lng: number
 }
 export const personasCerca = (radioKm = 15) => rpc<PersonaCerca[]>('personas_cerca', { p_radio_km: radioKm })
+export const buscarHabilidadesCerca = (texto: string, radioKm = 15) =>
+  rpc<PersonaCerca[]>('buscar_habilidades_cerca', { p_texto: texto, p_radio_km: radioKm })

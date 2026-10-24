@@ -4,21 +4,21 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { X } from 'lucide-react-native'
 import { Chip } from '../components/Chip'
 import { Boton, Campo, Texto, Titulo } from '../components/ui'
-import { useCategorias } from '../lib/datos'
 import { useSesion } from '../lib/sesion'
 import { supabase } from '../lib/supabase'
 import { colores, espacio } from '../theme'
 
 type Experiencia = { id: string; titulo: string; lugar: string | null; desde_anio: number; hasta_anio: number | null }
-type Oficio = { label: string; category_id: number | null }
+type Oficio = { label: string; category_id: number | null; tipo: 'oficio' | 'tarea'; catalog_id: string | null }
+type Habilidad = { id: string; label: string; category_id: number | null; tipo: 'oficio' | 'tarea' }
 
 // Curriculum y oficios propios. Los ven solo los contactos aceptados.
 export default function EditarCurriculum() {
   const { sesion } = useSesion()
   const yo = sesion?.user.id
-  const categorias = useCategorias()
   const [experiencias, setExperiencias] = useState<Experiencia[]>([])
   const [oficios, setOficios] = useState<Oficio[]>([])
+  const [habilidades, setHabilidades] = useState<Habilidad[]>([])
   const [titulo, setTitulo] = useState('')
   const [lugar, setLugar] = useState('')
   const [desde, setDesde] = useState('')
@@ -28,16 +28,18 @@ export default function EditarCurriculum() {
 
   const cargar = useCallback(async () => {
     if (!yo) return
-    const [cv, of] = await Promise.all([
+    const [cv, of, catalogo] = await Promise.all([
       supabase
         .from('cv_entries')
         .select('id, titulo, lugar, desde_anio, hasta_anio')
         .eq('user_id', yo)
         .order('desde_anio', { ascending: false }),
-      supabase.from('oficios').select('label, category_id').eq('user_id', yo).order('label'),
+      supabase.from('oficios').select('label, category_id, tipo, catalog_id').eq('user_id', yo).order('label'),
+      supabase.from('habilidades_catalogo').select('id, label, category_id, tipo').order('tipo').order('label'),
     ])
     setExperiencias((cv.data as Experiencia[]) ?? [])
     setOficios((of.data as Oficio[]) ?? [])
+    setHabilidades((catalogo.data as Habilidad[]) ?? [])
   }, [yo])
 
   useFocusEffect(
@@ -81,8 +83,8 @@ export default function EditarCurriculum() {
     cargar()
   }
 
-  async function agregarOficio(label: string, categoryId: number | null) {
-    const { error: e } = await supabase.from('oficios').insert({ user_id: yo, label, category_id: categoryId })
+  async function agregarOficio(label: string, categoryId: number | null, tipo: Oficio['tipo'] = 'oficio', catalogId: string | null = null) {
+    const { error: e } = await supabase.from('oficios').insert({ user_id: yo, label, category_id: categoryId, tipo, catalog_id: catalogId })
     if (error(e)) return
     setOficioPropio('')
     cargar()
@@ -93,11 +95,17 @@ export default function EditarCurriculum() {
     cargar()
   }
 
-  const sugeridas = categorias.filter((c) => !oficios.some((o) => o.label === c.name))
+  const sinAgregar = (h: Habilidad) => !oficios.some((o) => o.catalog_id === h.id || o.label === h.label)
+  const profesiones = habilidades.filter((h) => h.tipo === 'oficio' && sinAgregar(h))
+  const tareas = habilidades.filter((h) => h.tipo === 'tarea' && sinAgregar(h))
 
   return (
     <ScrollView contentContainerStyle={estilos.contenido} keyboardShouldPersistTaps="handled">
-      <Titulo nivel={2}>Mis oficios</Titulo>
+      <Titulo nivel={2}>Qué sabés hacer?</Titulo>
+      <Texto suave>
+        Sumá tu profesión y también esas tareas chicas por las que te moverías. Así un vecino puede encontrarte aunque
+        no seas profesional de ese rubro.
+      </Texto>
       <View style={estilos.etiquetas}>
         {oficios.map((o) => (
           <Pressable key={o.label} onPress={() => quitarOficio(o.label)} style={estilos.oficio} accessibilityLabel={`Quitar ${o.label}`}>
@@ -106,17 +114,26 @@ export default function EditarCurriculum() {
           </Pressable>
         ))}
       </View>
-      {sugeridas.length > 0 && <Texto suave>Tocá uno para sumarlo:</Texto>}
+      <Titulo nivel={3}>Tu profesión u oficio</Titulo>
       <View style={estilos.etiquetas}>
-        {sugeridas.map((c) => (
-          <Chip key={c.id} activo={false} onPress={() => agregarOficio(c.name, c.id)}>
-            {c.name}
+        {profesiones.map((h) => (
+          <Chip key={h.id} activo={false} onPress={() => agregarOficio(h.label, h.category_id, h.tipo, h.id)}>
+            {h.label}
           </Chip>
         ))}
       </View>
-      <Campo etiqueta="O escribí uno propio" value={oficioPropio} onChangeText={setOficioPropio} maxLength={40} />
+      <Titulo nivel={3}>También puedo dar una mano con...</Titulo>
+      <Texto suave>Por ejemplo, cambiar una lamparita, armar muebles o hacer un mandado.</Texto>
+      <View style={estilos.etiquetas}>
+        {tareas.map((h) => (
+          <Chip key={h.id} activo={false} onPress={() => agregarOficio(h.label, h.category_id, h.tipo, h.id)}>
+            {h.label}
+          </Chip>
+        ))}
+      </View>
+      <Campo etiqueta="O escribí algo que sabés hacer" value={oficioPropio} onChangeText={setOficioPropio} maxLength={40} />
       <Boton variante="secundario" deshabilitado={oficioPropio.trim().length < 2} onPress={() => agregarOficio(oficioPropio.trim(), null)}>
-        Agregar oficio
+        Agregar habilidad
       </Boton>
 
       <Titulo nivel={2}>Mi currículum</Titulo>

@@ -225,6 +225,20 @@ test('curriculum: un oficio puede venir de una categoria o ser propio', async ()
   assert.deepEqual(filas.map((f) => f.category_id), [null, 4])
 })
 
+test('habilidades: una tarea chica se encuentra por palabras habituales, no solo por el oficio', async () => {
+  const busca = await db.usuario(nombre('Busca'), RAMALLO)
+  const ayuda = await publico('Da una mano', { lat: -33.484, lng: -60.017 })
+  await como(
+    ayuda,
+    "insert into oficios (user_id, label, category_id, tipo, catalog_id) values ($1, 'Cambiar una lamparita', 5, 'tarea', 'cambiar-lamparita')",
+    [ayuda],
+  )
+
+  const encontrados = await como(busca, "select * from buscar_habilidades_cerca('cambiar lámpara')")
+  assert.ok(encontrados.some((x) => x.user_id === ayuda), 'encuentra la habilidad aunque no figure como electricista')
+  assert.equal(encontrados.find((x) => x.user_id === ayuda).oficios[0], 'Cambiar una lamparita')
+})
+
 // ---------------------------------------------------------------------- mapa
 
 test('mapa: un contacto que comparte aparece difuminado, sin datos exactos', async () => {

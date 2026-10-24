@@ -28,6 +28,7 @@ import { RequiereLogin } from '../../components/RequiereLogin'
 import { Boton, Texto, Titulo } from '../../components/ui'
 import {
   buscar,
+  buscarHabilidadesCerca,
   cargarContactos,
   personasCerca,
   responder,
@@ -49,6 +50,7 @@ export default function Contactos() {
   const [q, setQ] = useState('')
   const [resultados, setResultados] = useState<ResultadoBusqueda[]>([])
   const [buscando, setBuscando] = useState(false)
+  const [resultadosHabilidad, setResultadosHabilidad] = useState<PersonaCerca[]>([])
   const [mensajeBusqueda, setMensajeBusqueda] = useState('')
   const [refrescando, setRefrescando] = useState(false)
   const [cargandoAccion, setCargandoAccion] = useState<string | null>(null)
@@ -92,20 +94,27 @@ export default function Contactos() {
   async function hacerBuscar(texto: string) {
     setQ(texto)
     setMensajeBusqueda('')
-    if (texto.trim().length < 3) {
+    if (texto.trim().length < 2) {
       setResultados([])
+      setResultadosHabilidad([])
       setBuscando(false)
       return
     }
     setBuscando(true)
     try {
-      const r = await buscar(texto.trim())
+      // Personas por nombre/telefono (desde 3 letras) y gente cerca que sabe hacer lo que escribis.
+      const [r, h] = await Promise.all([
+        texto.trim().length >= 3 ? buscar(texto.trim()) : Promise.resolve([] as ResultadoBusqueda[]),
+        buscarHabilidadesCerca(texto.trim()),
+      ])
       setResultados(r)
-      if (r.length === 0) {
-        setMensajeBusqueda('No encontramos usuarios con ese nombre o teléfono.')
+      setResultadosHabilidad(h)
+      if (r.length === 0 && h.length === 0) {
+        setMensajeBusqueda('No encontramos a nadie con ese nombre, teléfono o habilidad cerca.')
       }
     } catch (e: any) {
       setResultados([])
+      setResultadosHabilidad([])
       setMensajeBusqueda(`Error en la búsqueda: ${e.message}`)
     } finally {
       setBuscando(false)
@@ -115,6 +124,7 @@ export default function Contactos() {
   function limpiarBusqueda() {
     setQ('')
     setResultados([])
+    setResultadosHabilidad([])
     setMensajeBusqueda('')
   }
 
@@ -124,6 +134,7 @@ export default function Contactos() {
       setCargandoAccion(solicitudId)
       await responder(solicitudId, acepta)
       await cargar()
+      if (q.trim().length >= 2) setResultadosHabilidad(await buscarHabilidadesCerca(q.trim()))
     } catch (e: any) {
       Alert.alert('No se pudo responder', e.message)
     } finally {
@@ -141,6 +152,7 @@ export default function Contactos() {
       if (q.trim().length >= 3) {
         setResultados(await buscar(q.trim()))
       }
+      if (q.trim().length >= 2) setResultadosHabilidad(await buscarHabilidadesCerca(q.trim()))
     } catch (e: any) {
       Alert.alert('No se pudo enviar la solicitud', e.message)
     } finally {
@@ -339,6 +351,26 @@ export default function Contactos() {
                             pathname: '/persona/[id]',
                             params: { id: c.user_id },
                           })
+                        }
+                      />
+                    ))}
+                  </View>
+                )}
+
+                {/* Gente cerca que sabe hacer lo que se busca (habilidades) */}
+                {resultadosHabilidad.length > 0 && (
+                  <View style={{ gap: espacio.s }}>
+                    <Texto suave fuerte style={estilos.subtituloSeccion}>
+                      CERCA TUYO QUE PUEDEN AYUDARTE ({resultadosHabilidad.length})
+                    </Texto>
+                    {resultadosHabilidad.map((p) => (
+                      <TarjetaPersonaCerca
+                        key={`hab-${p.user_id}`}
+                        persona={p}
+                        cargando={cargandoAccion === p.user_id}
+                        onAgregar={() => agregarUsuario(p.user_id)}
+                        onVerPerfil={() =>
+                          router.push({ pathname: '/persona/[id]', params: { id: p.user_id } })
                         }
                       />
                     ))}
@@ -605,7 +637,7 @@ function TarjetaPersonaCerca({
   onAgregar: () => void
   onVerPerfil: () => void
 }) {
-  const distanciaYBarrio = [persona.zona, textoDistancia(persona.distancia_km)]
+  const distanciaYBarrio = [persona.zona, textoDistancia(persona.distancia_km), persona.oficios?.join(', ')]
     .filter(Boolean)
     .join(' · ')
 

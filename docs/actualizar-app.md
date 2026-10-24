@@ -73,6 +73,13 @@ EXPO_TOKEN=... npm run actualizar:prueba -- "qué cambió"
 - Código: `movil/src/lib/actualizaciones.tsx` (proveedor), `movil/src/lib/version.ts` (compara
   versiones, con test).
 
+- **Modo Trabajo (24/10/2026):** migración `0111_modo_trabajo.sql` en producción (`ofrece_servicios`,
+  `buscar_servicio()`, tope de 10 chats nuevos por día con desconocidos, sinónimos de canilla/luz/etc. y arreglo de
+  `buscar_habilidades_cerca`). Actualización de la app publicada en `preview` (runtime 1.2.0), sin cambio nativo.
+  Diseño: `docs/superpowers/specs/2026-10-24-modo-trabajo-design.md`; plan: `docs/superpowers/plans/2026-10-24-modo-trabajo.md`.
+- Bots para probarlo: `node scripts/bots.mjs sembrar` (Lucía, Mateo, Nicolás, Camila y Tomás ofrecen servicios; Bruno no) y
+  `node scripts/bots.mjs buscar <bot> "canilla rota"` para ver qué devuelve el servidor.
+
 ## Bots de prueba
 
 `scripts/bots.mjs` (8 bots `bot-*@cercaya.test` contra producción). Uso en el encabezado del

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native'
 import { X } from 'lucide-react-native'
 import { Chip } from '../components/Chip'
 import { Boton, Campo, Texto, Titulo } from '../components/ui'
@@ -25,10 +25,11 @@ export default function EditarCurriculum() {
   const [hasta, setHasta] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [oficioPropio, setOficioPropio] = useState('')
+  const [ofrece, setOfrece] = useState(false)
 
   const cargar = useCallback(async () => {
     if (!yo) return
-    const [cv, of, catalogo] = await Promise.all([
+    const [cv, of, catalogo, priv] = await Promise.all([
       supabase
         .from('cv_entries')
         .select('id, titulo, lugar, desde_anio, hasta_anio')
@@ -36,10 +37,12 @@ export default function EditarCurriculum() {
         .order('desde_anio', { ascending: false }),
       supabase.from('oficios').select('label, category_id, tipo, catalog_id').eq('user_id', yo).order('label'),
       supabase.from('habilidades_catalogo').select('id, label, category_id, tipo').order('tipo').order('label'),
+      supabase.from('profile_private').select('ofrece_servicios').eq('user_id', yo).maybeSingle(),
     ])
     setExperiencias((cv.data as Experiencia[]) ?? [])
     setOficios((of.data as Oficio[]) ?? [])
     setHabilidades((catalogo.data as Habilidad[]) ?? [])
+    setOfrece(!!priv.data?.ofrece_servicios)
   }, [yo])
 
   useFocusEffect(
@@ -95,6 +98,15 @@ export default function EditarCurriculum() {
     cargar()
   }
 
+  // El servidor rechaza activarlo sin habilidades y lo apaga al borrar la ultima:
+  // despues de cada cambio se vuelve a leer para mostrar el estado real.
+  async function cambiarOfrece(valor: boolean) {
+    setOfrece(valor)
+    const { error: e } = await supabase.from('profile_private').update({ ofrece_servicios: valor }).eq('user_id', yo)
+    if (e) Alert.alert('No se pudo guardar', e.message)
+    cargar()
+  }
+
   const sinAgregar = (h: Habilidad) => !oficios.some((o) => o.catalog_id === h.id || o.label === h.label)
   const profesiones = habilidades.filter((h) => h.tipo === 'oficio' && sinAgregar(h))
   const tareas = habilidades.filter((h) => h.tipo === 'tarea' && sinAgregar(h))
@@ -106,6 +118,23 @@ export default function EditarCurriculum() {
         Sumá tu profesión y también esas tareas chicas por las que te moverías. Así un vecino puede encontrarte aunque
         no seas profesional de ese rubro.
       </Texto>
+      <View style={estilos.ofrece}>
+        <View style={{ flex: 1 }}>
+          <Texto fuerte>Ofrezco servicios</Texto>
+          <Texto suave style={{ fontSize: 14 }}>
+            {oficios.length === 0
+              ? 'Sumá al menos una habilidad para poder activarlo.'
+              : 'Aparecés cuando alguien busca lo que sabés hacer. Se ve tu nombre, tus habilidades y tu barrio, nunca tu punto exacto.'}
+          </Texto>
+        </View>
+        <Switch
+          value={ofrece}
+          disabled={oficios.length === 0}
+          onValueChange={cambiarOfrece}
+          trackColor={{ true: colores.naranja }}
+          accessibilityLabel="Ofrezco servicios"
+        />
+      </View>
       <View style={estilos.etiquetas}>
         {oficios.map((o) => (
           <Pressable key={o.label} onPress={() => quitarOficio(o.label)} style={estilos.oficio} accessibilityLabel={`Quitar ${o.label}`}>
@@ -169,6 +198,16 @@ export default function EditarCurriculum() {
 const estilos = StyleSheet.create({
   contenido: { padding: espacio.xl, gap: espacio.m },
   etiquetas: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
+  ofrece: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espacio.m,
+    padding: espacio.m,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colores.borde,
+    backgroundColor: colores.naranjaSuave,
+  },
   oficio: {
     flexDirection: 'row',
     alignItems: 'center',

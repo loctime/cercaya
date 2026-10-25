@@ -24,6 +24,7 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
   const { origen } = useUbicacion()
   const [texto, setTexto] = useState('')
   const [radioKm, setRadioKm] = useState(RADIO_BASE)
+  const [soloDisponibles, setSoloDisponibles] = useState(false)
   const [resultados, setResultados] = useState<ResultadoServicio[]>([])
   const [estado, setEstado] = useState<Estado>('inicial')
   const [seleccionado, setSeleccionado] = useState<ResultadoServicio | null>(null)
@@ -58,7 +59,7 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
     setEstado('buscando')
     const espera = setTimeout(async () => {
       try {
-        const r = await buscarServicio(texto.trim(), radioKm)
+        const r = await buscarServicio(texto.trim(), radioKm, soloDisponibles)
         if (!vigente()) return
         setResultados(r)
         setEstado('listo')
@@ -78,7 +79,7 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
       secuencia()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [texto, radioKm, reintento])
+  }, [texto, radioKm, soloDisponibles, reintento])
 
   function escribir(t: string) {
     setTexto(t)
@@ -157,6 +158,21 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
           )}
         </View>
 
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync()
+            setSoloDisponibles((v) => !v)
+          }}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: soloDisponibles }}
+          style={[estilos.filtro, soloDisponibles && estilos.filtroActivo]}
+        >
+          <View style={[estilos.punto, { backgroundColor: colores.exito }]} />
+          <Texto fuerte={soloDisponibles} style={{ fontSize: 14 }}>
+            Solo disponibles ahora
+          </Texto>
+        </Pressable>
+
         {!hayTexto && sugerencias.length > 0 && (
           <View style={estilos.sugerencias}>
             {sugerencias.map((s) => (
@@ -179,12 +195,17 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
         {estado === 'listo' && resultados.length === 0 && (
           <View style={estilos.panel}>
             <Titulo nivel={3} style={{ textAlign: 'center' }}>
-              Todavía nadie cerca ofrece esto
+              {soloDisponibles ? 'Nadie disponible ahora cerca' : 'Todavía nadie cerca ofrece esto'}
             </Titulo>
             <Texto suave style={{ textAlign: 'center', fontSize: 14 }}>
               Buscamos cerca de {origen.etiqueta}, hasta {radioKm} km.
             </Texto>
-            {radioKm < RADIO_MAX && (
+            {soloDisponibles && (
+              <Boton variante="secundario" onPress={() => setSoloDisponibles(false)}>
+                Ver también a los no disponibles
+              </Boton>
+            )}
+            {!soloDisponibles && radioKm < RADIO_MAX && (
               <Boton variante="secundario" onPress={() => setRadioKm(RADIO_MAX)}>
                 Buscar más lejos
               </Boton>
@@ -204,6 +225,14 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
               <Texto style={{ fontSize: 14 }} numberOfLines={1}>
                 {seleccionado.coincide}
               </Texto>
+              {seleccionado.disponible && (
+                <View style={estilos.filaDisponible}>
+                  <View style={[estilos.punto, { backgroundColor: colores.exito }]} />
+                  <Texto fuerte style={{ fontSize: 14, color: colores.exito }}>
+                    Disponible ahora
+                  </Texto>
+                </View>
+              )}
               <Texto suave style={{ fontSize: 14 }} numberOfLines={1}>
                 {[seleccionado.zona, textoDistancia(seleccionado.distancia_km)].filter(Boolean).join(' · ')}
               </Texto>
@@ -251,6 +280,7 @@ function PinServicio({ p, seleccionado }: { p: ResultadoServicio; seleccionado: 
       ) : (
         <Text style={estilosPin.inicial}>{iniciales(p.full_name)}</Text>
       )}
+      {p.disponible && <View style={estilosPin.disponible} />}
     </View>
   )
 }
@@ -269,6 +299,17 @@ const estilosPin = StyleSheet.create({
   },
   avatar: { width: '100%', height: '100%' },
   inicial: { fontFamily: fuentes.titulo, fontSize: 16, color: colores.tinta },
+  disponible: {
+    position: 'absolute',
+    right: 2,
+    bottom: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colores.exito,
+    borderWidth: 2,
+    borderColor: colores.blanco,
+  },
 })
 
 const estilos = StyleSheet.create({
@@ -290,6 +331,21 @@ const estilos = StyleSheet.create({
     elevation: 4,
   },
   input: { flex: 1, paddingVertical: 12, fontSize: 16, fontFamily: fuentes.texto, color: colores.tinta },
+  filtro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espacio.s,
+    alignSelf: 'flex-start',
+    backgroundColor: colores.fondo,
+    borderRadius: radio.full,
+    paddingHorizontal: espacio.m,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colores.borde,
+  },
+  filtroActivo: { borderColor: colores.exito, backgroundColor: '#F0FDF4' },
+  punto: { width: 10, height: 10, borderRadius: 5 },
+  filaDisponible: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sugerencias: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
   sugerencia: {
     backgroundColor: colores.fondo,

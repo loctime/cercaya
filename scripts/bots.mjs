@@ -28,14 +28,14 @@ const ANON = fs.readFileSync(envPath, 'utf8').match(/EXPO_PUBLIC_SUPABASE_ANON_K
 const BASE = { lat: -33.4766, lng: -60.0041 }
 // rel: contacto (aceptado) | recibida (el bot le pide a Diego) | enviada (Diego le pide al bot) | ninguna
 const BOTS = [
-  { k: 'lucia',     email: 'bot-lucia@cercaya.test',     nombre: 'Lucía Ferreyra',  dlat: -0.0024, dlng: -0.0034, rel: 'contacto', comparte: true,  publico: false, oficio: 'Peluquera',      responde: true, ofrece: true,  habilidades: [['Peluquera', null, 'oficio']] },
-  { k: 'mateo',     email: 'bot-mateo@cercaya.test',     nombre: 'Mateo Quiroga',   dlat: -0.0104, dlng:  0.0041, rel: 'contacto', comparte: true,  publico: false, oficio: 'Carpintero',     responde: true, ofrece: true,  habilidades: [['Carpintero', null, 'oficio'], ['Armar muebles', 'armar-muebles', 'tarea']] },
-  { k: 'sofia',     email: 'bot-sofia@cercaya.test',     nombre: 'Sofía Álvarez',   dlat:  0.0060, dlng: -0.0090, rel: 'contacto', comparte: false, publico: false, oficio: 'Contadora',      responde: true, ofrece: false, habilidades: [['Contadora', null, 'oficio']] },
-  { k: 'tomas',     email: 'bot-tomas@cercaya.test',     nombre: 'Tomás Benítez',   dlat:  0.0030, dlng:  0.0060, rel: 'recibida', comparte: true,  publico: false, oficio: 'Plomero',        responde: true, ofrece: true,  habilidades: [['Plomero', 'plomero', 'oficio'], ['Arreglar una canilla', 'arreglar-canilla', 'tarea'], ['Destapar un desagüe', 'destapar-desague', 'tarea']] },
-  { k: 'valentina', email: 'bot-valentina@cercaya.test', nombre: 'Valentina Ríos',  dlat: -0.0150, dlng: -0.0120, rel: 'enviada',  comparte: true,  publico: false, oficio: 'Fotógrafa',      responde: true, ofrece: false, habilidades: [['Fotógrafa', null, 'oficio']] },
-  { k: 'nicolas',   email: 'bot-nicolas@cercaya.test',   nombre: 'Nicolás Paz',     dlat:  0.0270, dlng:  0.0150, rel: 'ninguna',  comparte: false, publico: true,  oficio: 'Electricista',   responde: true, ofrece: true,  habilidades: [['Electricista', 'electricista', 'oficio'], ['Cambiar una lamparita', 'cambiar-lamparita', 'tarea']] },
-  { k: 'camila',    email: 'bot-camila@cercaya.test',    nombre: 'Camila Herrera',  dlat: -0.0900, dlng:  0.0500, rel: 'ninguna',  comparte: false, publico: true,  oficio: 'Diseñadora',     responde: true, ofrece: true,  habilidades: [['Diseñadora', null, 'oficio']] },
-  { k: 'bruno',     email: 'bot-bruno@cercaya.test',     nombre: 'Bruno Acosta',    dlat:  0.0200, dlng: -0.0200, rel: 'ninguna',  comparte: false, publico: false, oficio: null,             responde: false, ofrece: false, habilidades: [] },
+  { k: 'lucia',     email: 'bot-lucia@cercaya.test',     nombre: 'Lucía Ferreyra',  dlat: -0.0024, dlng: -0.0034, rel: 'contacto', comparte: true,  publico: false, oficio: 'Peluquera',      responde: true, ofrece: true, disponible: false,  habilidades: [['Peluquera', null, 'oficio']] },
+  { k: 'mateo',     email: 'bot-mateo@cercaya.test',     nombre: 'Mateo Quiroga',   dlat: -0.0104, dlng:  0.0041, rel: 'contacto', comparte: true,  publico: false, oficio: 'Carpintero',     responde: true, ofrece: true, disponible: false,  habilidades: [['Carpintero', null, 'oficio'], ['Armar muebles', 'armar-muebles', 'tarea']] },
+  { k: 'sofia',     email: 'bot-sofia@cercaya.test',     nombre: 'Sofía Álvarez',   dlat:  0.0060, dlng: -0.0090, rel: 'contacto', comparte: false, publico: false, oficio: 'Contadora',      responde: true, ofrece: false, disponible: false, habilidades: [['Contadora', null, 'oficio']] },
+  { k: 'tomas',     email: 'bot-tomas@cercaya.test',     nombre: 'Tomás Benítez',   dlat:  0.0030, dlng:  0.0060, rel: 'recibida', comparte: true,  publico: false, oficio: 'Plomero',        responde: true, ofrece: true, disponible: true,  habilidades: [['Plomero', 'plomero', 'oficio'], ['Arreglar una canilla', 'arreglar-canilla', 'tarea'], ['Destapar un desagüe', 'destapar-desague', 'tarea']] },
+  { k: 'valentina', email: 'bot-valentina@cercaya.test', nombre: 'Valentina Ríos',  dlat: -0.0150, dlng: -0.0120, rel: 'enviada',  comparte: true,  publico: false, oficio: 'Fotógrafa',      responde: true, ofrece: false, disponible: false, habilidades: [['Fotógrafa', null, 'oficio']] },
+  { k: 'nicolas',   email: 'bot-nicolas@cercaya.test',   nombre: 'Nicolás Paz',     dlat:  0.0270, dlng:  0.0150, rel: 'ninguna',  comparte: false, publico: true,  oficio: 'Electricista',   responde: true, ofrece: true, disponible: true,  habilidades: [['Electricista', 'electricista', 'oficio'], ['Cambiar una lamparita', 'cambiar-lamparita', 'tarea']] },
+  { k: 'camila',    email: 'bot-camila@cercaya.test',    nombre: 'Camila Herrera',  dlat: -0.0900, dlng:  0.0500, rel: 'ninguna',  comparte: false, publico: true,  oficio: 'Diseñadora',     responde: true, ofrece: true, disponible: false,  habilidades: [['Diseñadora', null, 'oficio']] },
+  { k: 'bruno',     email: 'bot-bruno@cercaya.test',     nombre: 'Bruno Acosta',    dlat:  0.0200, dlng: -0.0200, rel: 'ninguna',  comparte: false, publico: false, oficio: null,             responde: false, ofrece: false, disponible: false, habilidades: [] },
 ]
 const bot = (k) => BOTS.find((b) => b.k === k) ?? (console.error('Bot desconocido: ' + k + '. Hay: ' + BOTS.map((b) => b.k).join(', ')), process.exit(1))
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`
@@ -56,10 +56,10 @@ async function sembrar() {
   const [d] = await sql(`select id from auth.users where email = ${q(DIEGO)}`)
   if (!d) throw new Error('No encuentro a ' + DIEGO)
   const habs = BOTS.flatMap((b) => b.habilidades.map(([label, cat, tipo]) => `(${q(b.email)}, ${q(label)}, ${cat ? q(cat) : 'null'}, ${q(tipo)})`)).join(',\n')
-  const filas = BOTS.map((b) => `(${q(b.email)}, ${q(b.nombre)}, ${BASE.lat + b.dlat}, ${BASE.lng + b.dlng}, ${b.comparte}, ${b.publico}, ${q(b.rel)}, ${b.oficio ? q(b.oficio) : 'null'}, ${b.ofrece})`).join(',\n')
+  const filas = BOTS.map((b) => `(${q(b.email)}, ${q(b.nombre)}, ${BASE.lat + b.dlat}, ${BASE.lng + b.dlng}, ${b.comparte}, ${b.publico}, ${q(b.rel)}, ${b.oficio ? q(b.oficio) : 'null'}, ${b.ofrece}, ${b.disponible})`).join(',\n')
   await sql(`
 begin;
-create temp table bots (email text, nombre text, lat float8, lng float8, comparte boolean, publico boolean, rel text, oficio text, ofrece boolean) on commit drop;
+create temp table bots (email text, nombre text, lat float8, lng float8, comparte boolean, publico boolean, rel text, oficio text, ofrece boolean, disponible boolean) on commit drop;
 insert into bots values ${filas};
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
@@ -90,6 +90,10 @@ select u.id, h.label, h.catalog_id, h.tipo from habs h join auth.users u on u.em
 
 -- Modo Trabajo: "Ofrezco servicios" solo despues de cargar las habilidades (el servidor lo exige).
 update profile_private pv set ofrece_servicios = b.ofrece
+  from bots b join auth.users u on u.email = b.email where pv.user_id = u.id;
+
+-- "Disponible ahora": solo los bots marcados, por 8 horas.
+update profile_private pv set disponible_hasta = case when b.disponible and b.ofrece then now() + interval '8 hours' end
   from bots b join auth.users u on u.email = b.email where pv.user_id = u.id;
 
 delete from cv_entries where user_id in (select u.id from bots b join auth.users u on u.email = b.email);
@@ -202,14 +206,21 @@ async function tick(b, diego) {
   }
 }
 
+// Mantiene frescas la ubicacion (vence a los 7 dias) y la disponibilidad (vence a las 8 horas) de los bots.
+async function refrescarBots() {
+  const disp = BOTS.filter((b) => b.disponible && b.ofrece).map((b) => q(b.email)).join(', ')
+  await sql(`update profile_private set location_updated_at = now() where user_id in (select id from auth.users where email like 'bot-%@cercaya.test')`)
+  if (disp) await sql(`update profile_private set disponible_hasta = now() + interval '8 hours' where user_id in (select id from auth.users where email in (${disp}))`)
+}
+
 async function correr() {
   const diego = await diegoId()
-  await sql(`update profile_private set location_updated_at = now() where user_id in (select id from auth.users where email like 'bot-%@cercaya.test')`)
+  await refrescarBots()
   console.log('Bots escuchando (Ctrl+C para cortar). Revisan cada 4 s.')
   let n = 0
   for (;;) {
     for (const b of BOTS) { try { await tick(b, diego) } catch (e) { console.error(`${b.k}: ${e.message}`) } }
-    if (++n % 450 === 0) await sql(`update profile_private set location_updated_at = now() where user_id in (select id from auth.users where email like 'bot-%@cercaya.test')`)
+    if (++n % 450 === 0) await refrescarBots()
     await new Promise((r) => setTimeout(r, 4000))
   }
 }

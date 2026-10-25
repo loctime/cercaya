@@ -15,6 +15,7 @@ export type ResultadoServicio = {
   es_contacto: boolean
   lat: number
   lng: number
+  disponible: boolean
 }
 
 /** Hay al menos 2 letras o numeros reales (sin tildes ni simbolos). */
@@ -38,4 +39,17 @@ export function nuevaSecuencia(): () => () => boolean {
     const mia = ++actual
     return () => mia === actual
   }
+}
+
+/** true si `hasta` es una fecha valida posterior a `ahora`. */
+export function disponibleAhora(hasta: string | null | undefined, ahora: Date = new Date()): boolean {
+  if (!hasta) return false
+  const t = new Date(hasta).getTime()
+  return Number.isFinite(t) && t > ahora.getTime()
+}
+
+/** "hasta las 18:30" en hora local del celular. */
+export function textoDisponibleHasta(hasta: string): string {
+  const d = new Date(hasta)
+  return `hasta las ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
 }

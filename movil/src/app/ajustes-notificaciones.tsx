@@ -14,6 +14,7 @@ type Prefs = {
   mensajes: boolean
   estado_pedidos: boolean
   resenas: boolean
+  disponibilidad: boolean
 }
 
 const OPCIONES: { clave: keyof Omit<Prefs, 'pedidos_radio_km'>; titulo: string; detalle: string }[] = [
@@ -21,6 +22,7 @@ const OPCIONES: { clave: keyof Omit<Prefs, 'pedidos_radio_km'>; titulo: string; 
   { clave: 'mensajes', titulo: 'Mensajes nuevos', detalle: 'Cuando alguien te escribe por el chat.' },
   { clave: 'estado_pedidos', titulo: 'Novedades de tus pedidos', detalle: 'Interesados, asignación, llegada, trabajo terminado.' },
   { clave: 'resenas', titulo: 'Reseñas', detalle: 'Cuando alguien te califica.' },
+  { clave: 'disponibilidad', titulo: 'Aviso de disponibilidad', detalle: 'Una vez por día a la mañana, si ofrecés servicios: Estás disponible hoy?' },
 ]
 
 const RADIOS = [5, 10, 15, 30]
@@ -50,7 +52,7 @@ export default function AjustesNotificaciones() {
   useEffect(() => {
     supabase
       .from('notification_prefs')
-      .select('pedidos_cerca, pedidos_radio_km, mensajes, estado_pedidos, resenas')
+      .select('pedidos_cerca, pedidos_radio_km, mensajes, estado_pedidos, resenas, disponibilidad')
       .eq('user_id', yo)
       .single()
       .then(({ data }) => setPrefs(data as Prefs))

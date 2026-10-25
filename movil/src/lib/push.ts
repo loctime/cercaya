@@ -27,6 +27,9 @@ async function modulo() {
 
 // A donde lleva tocar la notificacion, segun lo que trae en data.
 function destino(data: Record<string, unknown> | undefined) {
+  if (data?.disponibilidad === true) {
+    return '/disponibilidad' as const
+  }
   if (typeof data?.encounter_id === 'string') {
     return { pathname: '/encuentro/[id]' as const, params: { id: data.encounter_id } }
   }

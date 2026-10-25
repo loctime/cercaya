@@ -4,12 +4,14 @@ import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-na
 import { X } from 'lucide-react-native'
 import { Chip } from '../components/Chip'
 import { Boton, Campo, Texto, Titulo } from '../components/ui'
+import { estoyDisponible, miDisponibilidad, yaNoDisponible } from '../lib/disponibilidad'
+import { disponibleAhora, textoDisponibleHasta } from '../lib/trabajo'
 import { useSesion } from '../lib/sesion'
 import { supabase } from '../lib/supabase'
 import { colores, espacio } from '../theme'
 
 type Experiencia = { id: string; titulo: string; lugar: string | null; desde_anio: number; hasta_anio: number | null }
-type Oficio = { label: string; category_id: number | null; tipo: 'oficio' | 'tarea'; catalog_id: string | null }
+type Oficio = { label: string; category_id: number | null; tipo: 'oficio' | 'tarea'; catalog_id: string | null; acepta_pedidos: boolean }
 type Habilidad = { id: string; label: string; category_id: number | null; tipo: 'oficio' | 'tarea' }
 
 // Curriculum y oficios propios. Los ven solo los contactos aceptados.
@@ -26,6 +28,7 @@ export default function EditarCurriculum() {
   const [descripcion, setDescripcion] = useState('')
   const [oficioPropio, setOficioPropio] = useState('')
   const [ofrece, setOfrece] = useState(false)
+  const [disponibleHasta, setDisponibleHasta] = useState<string | null>(null)
 
   const cargar = useCallback(async () => {
     if (!yo) return
@@ -35,7 +38,7 @@ export default function EditarCurriculum() {
         .select('id, titulo, lugar, desde_anio, hasta_anio')
         .eq('user_id', yo)
         .order('desde_anio', { ascending: false }),
-      supabase.from('oficios').select('label, category_id, tipo, catalog_id').eq('user_id', yo).order('label'),
+      supabase.from('oficios').select('label, category_id, tipo, catalog_id, acepta_pedidos').eq('user_id', yo).order('label'),
       supabase.from('habilidades_catalogo').select('id, label, category_id, tipo').order('tipo').order('label'),
       supabase.from('profile_private').select('ofrece_servicios').eq('user_id', yo).maybeSingle(),
     ])
@@ -43,6 +46,7 @@ export default function EditarCurriculum() {
     setOficios((of.data as Oficio[]) ?? [])
     setHabilidades((catalogo.data as Habilidad[]) ?? [])
     setOfrece(!!priv.data?.ofrece_servicios)
+    miDisponibilidad(yo).then((d) => setDisponibleHasta(d.hasta))
   }, [yo])
 
   useFocusEffect(
@@ -107,6 +111,29 @@ export default function EditarCurriculum() {
     cargar()
   }
 
+  async function cambiarDisponible(valor: boolean) {
+    try {
+      if (valor) setDisponibleHasta(await estoyDisponible())
+      else {
+        setDisponibleHasta(null)
+        await yaNoDisponible()
+      }
+    } catch (e: any) {
+      Alert.alert('No se pudo guardar', e.message)
+      cargar()
+    }
+  }
+
+  async function cambiarAcepta(label: string, valor: boolean) {
+    setOficios((lista) => lista.map((o) => (o.label === label ? { ...o, acepta_pedidos: valor } : o)))
+    const { error: e } = await supabase.from('oficios').update({ acepta_pedidos: valor }).eq('user_id', yo).eq('label', label)
+    if (e) {
+      Alert.alert('No se pudo guardar', e.message)
+      cargar()
+    }
+  }
+
+  const disponible = disponibleAhora(disponibleHasta)
   const sinAgregar = (h: Habilidad) => !oficios.some((o) => o.catalog_id === h.id || o.label === h.label)
   const profesiones = habilidades.filter((h) => h.tipo === 'oficio' && sinAgregar(h))
   const tareas = habilidades.filter((h) => h.tipo === 'tarea' && sinAgregar(h))
@@ -135,12 +162,43 @@ export default function EditarCurriculum() {
           accessibilityLabel="Ofrezco servicios"
         />
       </View>
-      <View style={estilos.etiquetas}>
+      {ofrece && (
+        <View style={estilos.ofrece}>
+          <View style={{ flex: 1 }}>
+            <Texto fuerte>Disponible ahora</Texto>
+            <Texto suave style={{ fontSize: 14 }}>
+              {disponible && disponibleHasta
+                ? `Aparecés primero en las búsquedas, ${textoDisponibleHasta(disponibleHasta)}.`
+                : 'Prendelo cuando puedas tomar trabajitos. Se apaga solo a las 8 horas.'}
+            </Texto>
+          </View>
+          <Switch
+            value={disponible}
+            onValueChange={cambiarDisponible}
+            trackColor={{ true: colores.naranja }}
+            accessibilityLabel="Disponible ahora"
+          />
+        </View>
+      )}
+      {oficios.length > 0 && (
+        <Texto suave style={{ fontSize: 14 }}>
+          Prendé las que aceptás hacer como trabajito. Tocá la X para borrar una.
+        </Texto>
+      )}
+      <View style={{ gap: espacio.s }}>
         {oficios.map((o) => (
-          <Pressable key={o.label} onPress={() => quitarOficio(o.label)} style={estilos.oficio} accessibilityLabel={`Quitar ${o.label}`}>
-            <Texto>{o.label}</Texto>
-            <X size={14} color={colores.texto2} />
-          </Pressable>
+          <View key={o.label} style={estilos.filaOficio}>
+            <Texto style={{ flex: 1 }}>{o.label}</Texto>
+            <Switch
+              value={o.acepta_pedidos}
+              onValueChange={(v) => cambiarAcepta(o.label, v)}
+              trackColor={{ true: colores.naranja }}
+              accessibilityLabel={`Acepto trabajitos de ${o.label}`}
+            />
+            <Pressable onPress={() => quitarOficio(o.label)} accessibilityLabel={`Quitar ${o.label}`} hitSlop={10}>
+              <X size={18} color={colores.texto2} />
+            </Pressable>
+          </View>
         ))}
       </View>
       <Titulo nivel={3}>Tu profesión u oficio</Titulo>
@@ -198,6 +256,7 @@ export default function EditarCurriculum() {
 const estilos = StyleSheet.create({
   contenido: { padding: espacio.xl, gap: espacio.m },
   etiquetas: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
+  filaOficio: { flexDirection: 'row', alignItems: 'center', gap: espacio.m, paddingVertical: 4 },
   ofrece: {
     flexDirection: 'row',
     alignItems: 'center',

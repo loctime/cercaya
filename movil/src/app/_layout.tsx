@@ -77,6 +77,7 @@ export default function RootLayout() {
           <Stack.Screen name="persona/[id]" options={{ title: 'Perfil' }} />
           <Stack.Screen name="editar-curriculum" options={{ title: 'Mi currículum' }} />
           <Stack.Screen name="encuentro/[id]" options={{ title: 'En camino' }} />
+          <Stack.Screen name="disponibilidad" options={{ presentation: 'modal', title: 'Disponibilidad' }} />
         </Stack>
       </UbicacionProvider>
       </CompartirUbicacionProvider>

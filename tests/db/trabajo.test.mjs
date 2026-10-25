@@ -184,3 +184,29 @@ test('buscar_habilidades_cerca: las palabras no tienen que estar juntas en el ca
   assert.ok(r.some((x) => x.user_id === pro))
   assert.deepEqual(await como(yo, 'select * from buscar_habilidades_cerca($1, 15)', ['¿?']), [])
 })
+
+// ---------------------------------------------------------------- frases de la gente (revision final)
+
+test('buscar_servicio: "canilla rota" encuentra a un Plomero del catalogo', async () => {
+  const yo = await buscador()
+  const plomero = await ofrece('Plomero catalogo', CERCA, [['Plomero', 'plomero']])
+  for (const texto of ['Canilla rota', 'Reparación canilla', 'arreglar canilla']) {
+    assert.ok((await buscar(yo, texto)).some((x) => x.user_id === plomero), `"${texto}"`)
+  }
+})
+
+test('buscar_servicio: una habilidad escrita a mano se encuentra por frases', async () => {
+  const yo = await buscador()
+  const manual = await ofrece('Manual', CERCA, [['Arreglo canillas', null]])
+  for (const texto of ['Canilla rota', 'Arreglar canilla', 'Reparación canilla', 'canillas']) {
+    assert.ok((await buscar(yo, texto)).some((x) => x.user_id === manual), `"${texto}"`)
+  }
+})
+
+test('buscar_servicio: palabras de relleno solas no devuelven a todos', async () => {
+  const yo = await buscador()
+  await ofrece('Activo', CERCA)
+  for (const texto of ['arreglar', 'de la', 'rota', 'reparación', 'una']) {
+    assert.deepEqual(await buscar(yo, texto), [], `"${texto}"`)
+  }
+})

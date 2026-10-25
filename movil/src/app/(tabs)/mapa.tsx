@@ -736,7 +736,7 @@ const estilos = StyleSheet.create({
   },
   avisoVacioMini: {
     position: 'absolute',
-    top: 54,
+    top: 102, // debajo de la barra (selector + filtros)
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
@@ -762,7 +762,7 @@ const estilos = StyleSheet.create({
   },
   contenedorAvisoEncuentro: {
     position: 'absolute',
-    top: 54,
+    top: 102, // debajo de la barra (selector + filtros)
     left: espacio.m,
     right: espacio.m,
   },
@@ -795,7 +795,7 @@ const estilos = StyleSheet.create({
   },
   bannerError: {
     position: 'absolute',
-    top: 54,
+    top: 102, // debajo de la barra (selector + filtros)
     left: espacio.m,
     right: espacio.m,
     backgroundColor: '#FEF2F2',

@@ -346,3 +346,70 @@ test('avisar_disponibilidad: avisa a quien ofrece y no esta disponible, una vez 
   await db.sql('select avisar_disponibilidad()')
   assert.equal((await avisos(quiere)).n, 1, 'no repite el mismo dia')
 })
+
+// ---------------------------------------------------------------- revision de disponibilidad y catalogo (0115)
+
+test('catalogo: se encuentra por el nombre de la persona (tapicero, costurera, peluquera...)', async () => {
+  const yo = await buscador()
+  const casos = [
+    ['tapicero', 'Tapicería', ['tapicero', 'tapicera']],
+    ['fumigador', 'Fumigación y control de plagas', ['fumigador', 'fumigadora']],
+    ['costurera', 'Costura y arreglos de ropa', ['costurera', 'costurero']],
+    ['colocador-pisos', 'Colocación de pisos y revestimientos', ['colocador de pisos', 'colocadora']],
+    ['fletes', 'Fletes y mudanzas', ['fletero']],
+    ['diseno-grafico', 'Diseño gráfico', ['diseñador', 'diseñadora', 'disenador grafico']],
+    ['peluquero', 'Peluquero/a', ['peluquera']],
+    ['cocinero', 'Cocinero/a y catering', ['cocinera']],
+    ['fotografo', 'Fotógrafo/a', ['fotografa']],
+    ['herrero', 'Herrero', ['herrera']],
+    ['plomero', 'Plomero', ['plomera']],
+    ['cerrajero', 'Cerrajero', ['cerrajera']],
+    ['carpintero', 'Carpintero', ['carpintera']],
+    ['pintor', 'Pintor', ['pintora']],
+    ['jardinero', 'Jardinero', ['jardinera']],
+  ]
+  for (const [id, label, frases] of casos) {
+    const pro = await ofrece(label, CERCA, [[label, id]])
+    for (const frase of frases) {
+      assert.ok((await buscar(yo, frase)).some((x) => x.user_id === pro), `"${frase}" tiene que encontrar a ${label}`)
+    }
+  }
+})
+
+test('oficios: uno escrito a mano que coincide con el catalogo se vincula solo y gana los sinonimos', async () => {
+  const yo = await buscador()
+  const manual = await ofrece('Gasista manual', CERCA, [['gasista', null]])
+  const fila = await db.uno('select catalog_id, tipo from oficios where user_id = $1', [manual])
+  assert.equal(fila.catalog_id, 'gasista')
+  assert.ok((await buscar(yo, 'calefon')).some((x) => x.user_id === manual))
+})
+
+test('catalogo: no promete lo que no se puede verificar (matriculado, enfermera, kinesiologo)', async () => {
+  const yo = await buscador()
+  const gasista = await ofrece('Gasista sin matricula verificada', CERCA, [['Gasista', 'gasista']])
+  const cuidador = await ofrece('Cuidador', CERCA, [['Cuidado de adultos mayores', 'cuidador-mayores']])
+  const masajista = await ofrece('Masajista', CERCA, [['Masajista', 'masajista']])
+  assert.ok(!(await buscar(yo, 'gasista matriculado')).some((x) => x.user_id === gasista))
+  assert.ok(!(await buscar(yo, 'enfermera')).some((x) => x.user_id === cuidador))
+  assert.ok(!(await buscar(yo, 'kinesiologo')).some((x) => x.user_id === masajista))
+})
+
+test('estoy_disponible: exige alguna habilidad que acepte pedidos', async () => {
+  const pro = await ofrece('Todo apagado', CERCA)
+  await como(pro, 'update oficios set acepta_pedidos = false where user_id = $1', [pro])
+  await rechaza(como(pro, 'select estoy_disponible()'), /habilidad/i)
+})
+
+test('avisar_disponibilidad: no avisa a quien no aparece en ninguna busqueda', async () => {
+  const aparece = await ofrece('Aparece', CERCA)
+  const ubicacionVieja = await ofrece('Ubicacion vieja', CERCA)
+  await db.sql(`update profile_private set location_updated_at = now() - interval '200 days' where user_id = $1`, [ubicacionVieja])
+  const todoApagado = await ofrece('Habilidades apagadas', CERCA)
+  await db.sql('update oficios set acepta_pedidos = false where user_id = $1', [todoApagado])
+  const avisos = (id) => db.uno(`select count(*)::int n from notifications where user_id = $1 and kind = 'disponibilidad'`, [id])
+  await db.sql(`delete from notifications where kind = 'disponibilidad'`)
+  await db.sql('select avisar_disponibilidad()')
+  assert.equal((await avisos(aparece)).n, 1)
+  assert.equal((await avisos(ubicacionVieja)).n, 0)
+  assert.equal((await avisos(todoApagado)).n, 0)
+})

@@ -247,3 +247,102 @@ test('catalogo: las etiquetas y los ids no se repiten', async () => {
   assert.equal(Number(r.n), Number(r.ids))
   assert.equal(Number(r.n), Number(r.etiquetas))
 })
+
+// ---------------------------------------------------------------- disponibilidad (0114)
+
+const disponibleHasta = async (id) => (await db.uno('select disponible_hasta from profile_private where user_id = $1', [id])).disponible_hasta
+
+test('estoy_disponible: por defecto 8 horas, y se puede pedir de 1 a 24', async () => {
+  const pro = await ofrece('Disponible', CERCA)
+  const [{ estoy_disponible: hasta }] = await como(pro, 'select estoy_disponible() as estoy_disponible')
+  const horas = (new Date(hasta) - Date.now()) / 3600000
+  assert.ok(horas > 7.9 && horas < 8.1, `8 horas, dio ${horas}`)
+  await como(pro, 'select estoy_disponible($1)', [24])
+  await rechaza(como(pro, 'select estoy_disponible($1)', [0]), /horas/i)
+  await rechaza(como(pro, 'select estoy_disponible($1)', [25]), /horas/i)
+})
+
+test('estoy_disponible: exige tener activo Ofrezco servicios', async () => {
+  const sin = await ofrece('Sin activar', CERCA, [CANILLA], { activo: false })
+  await rechaza(como(sin, 'select estoy_disponible()'), /Ofrezco servicios/i)
+})
+
+test('ya_no_disponible: limpia la disponibilidad', async () => {
+  const pro = await ofrece('Se baja', CERCA)
+  await como(pro, 'select estoy_disponible()')
+  assert.ok(await disponibleHasta(pro))
+  await como(pro, 'select ya_no_disponible()')
+  assert.equal(await disponibleHasta(pro), null)
+})
+
+test('disponibilidad: apagar Ofrezco servicios la limpia, y nadie la edita a mano', async () => {
+  const pro = await ofrece('Apaga todo', CERCA)
+  await como(pro, 'select estoy_disponible()')
+  await rechaza(
+    como(pro, `update profile_private set disponible_hasta = now() + interval '100 days' where user_id = $1`, [pro]),
+    /permission denied/i,
+  )
+  await como(pro, 'update profile_private set ofrece_servicios = false where user_id = $1', [pro])
+  assert.equal(await disponibleHasta(pro), null)
+})
+
+test('buscar_servicio: los disponibles ahora salen primero aunque esten mas lejos', async () => {
+  const yo = await buscador()
+  const RELOJERO = [['Relojero Alfa', null]] // habilidad propia: aisla el test de los demas
+  const cerca = await ofrece('Cerca no disponible', CERCA, RELOJERO)
+  const lejos = await ofrece('Lejos disponible', VILLA, RELOJERO)
+  await como(lejos, 'select estoy_disponible()')
+  const r = await buscar(yo, 'relojero alfa')
+  assert.deepEqual(r.map((x) => x.user_id), [lejos, cerca])
+  assert.equal(r[0].disponible, true)
+  assert.equal(r[1].disponible, false)
+})
+
+test('buscar_servicio: solo disponibles filtra, y una disponibilidad vencida no cuenta', async () => {
+  const yo = await buscador()
+  const ZAPATERO = [['Zapatero Beta', null]] // habilidad propia: aisla el test de los demas
+  const activo = await ofrece('Activo ahora', CERCA, ZAPATERO)
+  const vencido = await ofrece('Vencido', CERCA, ZAPATERO)
+  await como(activo, 'select estoy_disponible()')
+  await db.sql(`update profile_private set disponible_hasta = now() - interval '1 minute' where user_id = $1`, [vencido])
+  const r = await como(yo, 'select * from buscar_servicio($1, $2, true)', ['zapatero beta', 15])
+  assert.deepEqual(r.map((x) => x.user_id), [activo])
+  const todos = await buscar(yo, 'zapatero beta')
+  assert.equal(todos.find((x) => x.user_id === vencido).disponible, false)
+})
+
+test('acepta_pedidos: una habilidad apagada no se encuentra, y sin ninguna encendida no aparece', async () => {
+  const yo = await buscador()
+  const mixto = await ofrece('Mixto', CERCA, [CANILLA, LAMPARITA])
+  await como(mixto, `update oficios set acepta_pedidos = false where user_id = $1 and catalog_id = 'arreglar-canilla'`, [mixto])
+  assert.ok(!(await buscar(yo, 'canilla')).some((x) => x.user_id === mixto), 'apago la canilla')
+  assert.ok((await buscar(yo, 'lamparita')).some((x) => x.user_id === mixto), 'sigue con la lamparita')
+  await como(mixto, `update oficios set acepta_pedidos = false where user_id = $1`, [mixto])
+  assert.ok(!(await buscar(yo, 'lamparita')).some((x) => x.user_id === mixto), 'todas apagadas')
+})
+
+test('acepta_pedidos: solo el dueño lo cambia', async () => {
+  const dueno = await ofrece('Dueño de la habilidad', CERCA)
+  const otro = await db.usuario(nombre('Otro'), RAMALLO)
+  const r = await como(otro, 'update oficios set acepta_pedidos = false where user_id = $1 returning 1', [dueno])
+  assert.equal(r.length, 0)
+})
+
+test('avisar_disponibilidad: avisa a quien ofrece y no esta disponible, una vez por dia y respetando preferencias', async () => {
+  const quiere = await ofrece('Quiere aviso', CERCA)
+  const yaDisponible = await ofrece('Ya disponible', CERCA)
+  await como(yaDisponible, 'select estoy_disponible()')
+  const noOfrece = await ofrece('No ofrece', CERCA, [CANILLA], { activo: false })
+  const noQuiere = await ofrece('No quiere aviso', CERCA)
+  await db.sql('update notification_prefs set disponibilidad = false where user_id = $1', [noQuiere])
+  const avisos = (id) => db.uno(`select count(*)::int n from notifications where user_id = $1 and kind = 'disponibilidad'`, [id])
+
+  await db.sql('select avisar_disponibilidad()')
+  assert.equal((await avisos(quiere)).n, 1)
+  assert.equal((await avisos(yaDisponible)).n, 0)
+  assert.equal((await avisos(noOfrece)).n, 0)
+  assert.equal((await avisos(noQuiere)).n, 0)
+
+  await db.sql('select avisar_disponibilidad()')
+  assert.equal((await avisos(quiere)).n, 1, 'no repite el mismo dia')
+})

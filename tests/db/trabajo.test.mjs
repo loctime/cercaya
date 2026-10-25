@@ -210,3 +210,40 @@ test('buscar_servicio: palabras de relleno solas no devuelven a todos', async ()
     assert.deepEqual(await buscar(yo, texto), [], `"${texto}"`)
   }
 })
+
+// ---------------------------------------------------------------- catalogo ampliado (0113)
+
+test('catalogo: tiene los oficios que propuso Marcelo y al menos 35 oficios', async () => {
+  const ids = (await db.sql(`select id from habilidades_catalogo where tipo = 'oficio'`)).map((x) => x.id)
+  for (const id of ['herrero', 'zinguero', 'cerrajero', 'carpintero', 'gasista', 'refrigeracion']) {
+    assert.ok(ids.includes(id), `falta ${id}`)
+  }
+  assert.ok(ids.length >= 35, `solo hay ${ids.length} oficios`)
+})
+
+test('catalogo: frases de la gente encuentran el oficio correcto', async () => {
+  const yo = await buscador()
+  const casos = [
+    ['cerrajero', 'Cerrajero', ['me quede afuera', 'abrir puerta', 'copia de llave']],
+    ['refrigeracion', 'Refrigeración y aire', ['aire acondicionado', 'split']],
+    ['gasista', 'Gasista', ['perdida de gas', 'calefon']],
+    ['zinguero', 'Zinguero', ['canaleta']],
+    ['herrero', 'Herrero', ['rejas', 'portones']],
+    ['carpintero', 'Carpintero', ['placard']],
+    ['mecanico', 'Mecánico', ['auto no arranca']],
+    ['fletes', 'Fletes y mudanzas', ['mudanza', 'flete']],
+  ]
+  for (const [id, label, frases] of casos) {
+    const pro = await ofrece(label, CERCA, [[label, id]])
+    for (const frase of frases) {
+      const r = await buscar(yo, frase)
+      assert.ok(r.some((x) => x.user_id === pro), `"${frase}" tiene que encontrar a ${label}`)
+    }
+  }
+})
+
+test('catalogo: las etiquetas y los ids no se repiten', async () => {
+  const r = await db.uno(`select count(*) n, count(distinct id) ids, count(distinct label) etiquetas from habilidades_catalogo`)
+  assert.equal(Number(r.n), Number(r.ids))
+  assert.equal(Number(r.n), Number(r.etiquetas))
+})

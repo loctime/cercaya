@@ -125,6 +125,9 @@ test('ciclo completo del pedido, chat y resenas', async () => {
   const lista = await db.como(plomero, (d) => d.sql('select * from pedidos_cerca()'))
   assert.equal(lista[0].id, job)
   assert.equal(Number(lista[0].distancia_km), 0)
+  assert.ok(Number.isFinite(Number(lista[0].map_lat)), 'el mapa recibe una latitud aproximada')
+  assert.ok(Number.isFinite(Number(lista[0].map_lng)), 'el mapa recibe una longitud aproximada')
+  assert.notEqual(Number(lista[0].map_lat), RAMALLO.lat, 'el pin no revela la coordenada exacta')
 
   // Solo prestadores aprobados del rubro pueden ofrecerse
   await rechaza(db.como(intruso, (d) => d.sql('select me_interesa($1)', [job])), /aprobado/)

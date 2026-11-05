@@ -60,7 +60,8 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ presentation: 'modal', title: 'Entrar' }} />
-          <Stack.Screen name="publicar" options={{ presentation: 'modal', title: 'Publicar pedido' }} />
+          <Stack.Screen name="habilidades-inicio" options={{ presentation: 'modal', title: 'Tus habilidades' }} />
+          <Stack.Screen name="publicar"options={{ presentation: 'modal', title: 'Publicar pedido' }} />
           <Stack.Screen name="localidad" options={{ presentation: 'modal', title: 'Tu zona' }} />
           <Stack.Screen name="notificaciones" options={{ title: 'Notificaciones' }} />
           <Stack.Screen name="prestador/[id]" options={{ title: '' }} />

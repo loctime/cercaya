@@ -58,7 +58,7 @@ export default function Login() {
           : 'No pudimos crear la cuenta. Revisá los datos.',
       )
     }
-    if (data.session) router.back()
+    if (data.session) router.replace('/habilidades-inicio')
     else setRevisarMail(true)
   }
 

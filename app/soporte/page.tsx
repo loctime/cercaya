@@ -37,6 +37,18 @@ const PREGUNTAS: { p: string; r: React.ReactNode }[] = [
     r: 'Denuncialo desde el menú de su perfil, del pedido o del chat, y bloquealo si querés. Revisamos todas las denuncias.',
   },
   {
+    p: 'Quiero sacar o reclamar mi negocio',
+    r: (
+      <>
+        Si tu negocio aparece en el mapa y no es tuyo, o no querés que aparezca, abrilo en la app y tocá "Esto no es mío /
+        sacalo": se saca en el momento. Si no tenés cuenta, escribinos a{' '}
+        <a href={`mailto:${EMAIL_CONTACTO}`}>{EMAIL_CONTACTO}</a> o mandanos un mensaje a @cercaya en Instagram, y lo sacamos
+        apenas lo recibimos. Si es tuyo y querés editarlo, tocá "Es mío": te damos un código para que nos lo mandes por
+        mensaje directo a @cercaya desde la cuenta de Instagram del negocio, y lo revisamos.
+      </>
+    ),
+  },
+  {
     p: 'Cómo borro mi cuenta?',
     r: (
       <>

@@ -72,6 +72,19 @@ export default function Privacidad() {
         <li>Tus mensajes solo los ven vos y la otra persona del chat.</li>
       </ul>
 
+      <h2>Negocios en el mapa</h2>
+      <p>
+        Además de las personas, el mapa muestra negocios y emprendimientos de la zona. Algunos los cargamos nosotros a partir
+        de lo que cada uno publica en su cuenta pública de Instagram: nombre, rubro, descripción, usuario de Instagram y,
+        si tiene local a la calle, su ubicación y su teléfono. Si un negocio trabaja desde su casa o va a domicilio, mostramos
+        solo una ubicación aproximada y nunca su teléfono ni su dirección.
+      </p>
+      <p>
+        Si sos el dueño, podés reclamar el perfil desde la app para editarlo. Si no querés aparecer, podés pedir la baja en
+        cualquier momento: desde la ficha del negocio en la app, escribiendo a <a href={`mailto:${EMAIL_CONTACTO}`}>{EMAIL_CONTACTO}</a>{' '}
+        o por mensaje directo a @cercaya en Instagram. Lo sacamos del mapa apenas lo recibimos.
+      </p>
+
       <h2>Con quién compartimos datos</h2>
       <p>Usamos proveedores que procesan datos por cuenta nuestra, solo para que la app funcione:</p>
       <ul>

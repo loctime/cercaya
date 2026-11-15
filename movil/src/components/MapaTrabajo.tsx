@@ -1,17 +1,19 @@
 import * as Haptics from 'expo-haptics'
 import { router } from 'expo-router'
-import { MessageCircle, Search, X } from 'lucide-react-native'
+import { AtSign, MessageCircle, Search, X } from 'lucide-react-native'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import MapView, { Marker } from 'react-native-maps'
 import { buscarServicio } from '../lib/contactos'
 import { abrirChat } from '../lib/contacto'
 import { textoDistancia } from '../lib/datos'
+import { buscarNegocios, urlInstagram, urlWhatsApp, type Negocio } from '../lib/negocios'
 import { supabase } from '../lib/supabase'
 import { consultaValida, nuevaSecuencia, RADIO_BASE, RADIO_MAX, type ResultadoServicio } from '../lib/trabajo'
 import { useUbicacion } from '../lib/ubicacion'
 import { colores, espacio, fuentes, radio } from '../theme'
 import { iniciales } from './Avatar'
+import { PinNegocio } from './PinNegocio'
 import { Boton, Texto, Titulo } from './ui'
 
 const ESPERA_MS = 400
@@ -28,6 +30,8 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
   const [resultados, setResultados] = useState<ResultadoServicio[]>([])
   const [estado, setEstado] = useState<Estado>('inicial')
   const [seleccionado, setSeleccionado] = useState<ResultadoServicio | null>(null)
+  const [negocios, setNegocios] = useState<Negocio[]>([])
+  const [negocioSel, setNegocioSel] = useState<Negocio | null>(null)
   const [sugerencias, setSugerencias] = useState<string[]>([])
   const [reintento, setReintento] = useState(0)
   const [abriendoChat, setAbriendoChat] = useState(false)
@@ -49,8 +53,10 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
   useEffect(() => {
     const vigente = secuencia()
     setSeleccionado(null)
+    setNegocioSel(null)
     if (!consultaValida(texto)) {
       setResultados([])
+      setNegocios([])
       setEstado('inicial')
       return () => {
         secuencia()
@@ -59,11 +65,19 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
     setEstado('buscando')
     const espera = setTimeout(async () => {
       try {
-        const r = await buscarServicio(texto.trim(), radioKm, soloDisponibles)
+        // Los negocios no tienen "disponible ahora": con ese filtro no se muestran.
+        // Si su busqueda falla, se muestra igual a las personas.
+        const [r, n] = await Promise.all([
+          buscarServicio(texto.trim(), radioKm, soloDisponibles),
+          soloDisponibles ? Promise.resolve([] as Negocio[]) : buscarNegocios(texto.trim(), radioKm).catch(() => [] as Negocio[]),
+        ])
         if (!vigente()) return
         setResultados(r)
+        setNegocios(n)
         setEstado('listo')
-        const coords = r.map((p) => ({ latitude: Number(p.lat), longitude: Number(p.lng) }))
+        const coords = [...r, ...n]
+          .map((p) => ({ latitude: Number(p.lat), longitude: Number(p.lng) }))
+          .filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude))
         if (coords.length > 0) {
           mapaRef.current?.fitToCoordinates([...coords, { latitude: origen.lat, longitude: origen.lng }], {
             edgePadding: { top: 170, right: 60, bottom: 260, left: 60 },
@@ -86,8 +100,36 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
     setRadioKm(RADIO_BASE)
   }
 
+  function elegirNegocio(n: Negocio) {
+    Haptics.selectionAsync()
+    setSeleccionado(null)
+    setNegocioSel(n)
+    mapaRef.current?.animateToRegion(
+      { latitude: Number(n.lat) - 0.006, longitude: Number(n.lng), latitudeDelta: 0.03, longitudeDelta: 0.03 },
+      300,
+    )
+  }
+
+  function verNegocio(n: Negocio) {
+    router.push({
+      pathname: '/negocio/[id]',
+      params: {
+        id: n.id,
+        nombre: n.nombre,
+        rubro: n.rubro,
+        bio: n.bio ?? '',
+        instagram_usuario: n.instagram_usuario,
+        estado: n.estado,
+        es_mio: n.es_mio ? '1' : '0',
+        telefono: n.telefono ?? '',
+        tipo: n.tipo,
+      },
+    })
+  }
+
   function elegir(p: ResultadoServicio) {
     Haptics.selectionAsync()
+    setNegocioSel(null)
     setSeleccionado(p)
     mapaRef.current?.animateToRegion(
       { latitude: Number(p.lat) - 0.006, longitude: Number(p.lng), latitudeDelta: 0.03, longitudeDelta: 0.03 },
@@ -116,8 +158,26 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
         showsMyLocationButton={false}
         showsCompass={false}
         toolbarEnabled={false}
-        onPress={() => setSeleccionado(null)}
+        onPress={() => {
+          setSeleccionado(null)
+          setNegocioSel(null)
+        }}
       >
+        {negocios.map((n) => {
+          const lat = Number(n.lat)
+          const lng = Number(n.lng)
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+          return (
+            <Marker
+              key={`negocio-${n.id}`}
+              coordinate={{ latitude: lat, longitude: lng }}
+              anchor={{ x: 0.5, y: 0.5 }}
+              onPress={() => elegirNegocio(n)}
+            >
+              <PinNegocio reclamado={n.estado === 'reclamado'} seleccionado={negocioSel?.id === n.id} />
+            </Marker>
+          )
+        })}
         {resultados.map((p) => {
           const lat = Number(p.lat)
           const lng = Number(p.lng)
@@ -192,7 +252,7 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
           </View>
         )}
 
-        {estado === 'listo' && resultados.length === 0 && (
+        {estado === 'listo' && resultados.length === 0 && negocios.length === 0 && (
           <View style={estilos.panel}>
             <Titulo nivel={3} style={{ textAlign: 'center' }}>
               {soloDisponibles ? 'Nadie disponible ahora cerca' : 'Todavía nadie cerca ofrece esto'}
@@ -213,6 +273,48 @@ export function MapaTrabajo({ selector }: { selector: ReactNode }) {
           </View>
         )}
       </View>
+
+      {negocioSel && (
+        <View style={estilos.tarjeta}>
+          <View style={estilos.tirador} />
+          <View style={estilos.cabeceraTarjeta}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Texto fuerte style={{ fontSize: 17 }} numberOfLines={1}>
+                {negocioSel.nombre}
+              </Texto>
+              <Texto style={{ fontSize: 14 }} numberOfLines={1}>
+                {negocioSel.rubro}
+              </Texto>
+              <Texto suave style={{ fontSize: 14 }} numberOfLines={1}>
+                {[negocioSel.estado === 'sin_reclamar' ? 'Perfil sin reclamar' : null, textoDistancia(negocioSel.distancia_km)]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Texto>
+            </View>
+            <Pressable onPress={() => setNegocioSel(null)} accessibilityLabel="Cerrar" hitSlop={10}>
+              <X size={20} color={colores.texto2} />
+            </Pressable>
+          </View>
+          <View style={estilos.acciones}>
+            {urlWhatsApp(negocioSel.telefono) && (
+              <Boton variante="whatsapp" onPress={() => Linking.openURL(urlWhatsApp(negocioSel.telefono)!)} style={{ flex: 1 }}>
+                WhatsApp
+              </Boton>
+            )}
+            <Boton
+              variante="secundario"
+              icono={AtSign}
+              onPress={() => Linking.openURL(urlInstagram(negocioSel.instagram_usuario))}
+              style={{ flex: 1 }}
+            >
+              Instagram
+            </Boton>
+          </View>
+          <Boton variante="secundario" onPress={() => verNegocio(negocioSel)}>
+            Ver negocio
+          </Boton>
+        </View>
+      )}
 
       {seleccionado && (
         <View style={estilos.tarjeta}>

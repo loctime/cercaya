@@ -10,6 +10,7 @@ import {
   ScrollText,
   Shield,
   ShieldCheck,
+  Store,
   UserRound,
 } from 'lucide-react-native'
 import type { LucideIcon } from 'lucide-react-native'
@@ -22,6 +23,7 @@ import * as Updates from 'expo-updates'
 import { useActualizaciones, versionInstalada } from '../../lib/actualizaciones'
 import { fecha, useCategorias } from '../../lib/datos'
 import { borrarMisArchivos } from '../../lib/imagenes'
+import { misNegocios } from '../../lib/negocios'
 import { olvidarTokenDeEsteCelular } from '../../lib/push'
 import { abrirPagina } from '../../lib/sitio'
 import { detenerServicioEncuentro } from '../../lib/tareaEncuentro'
@@ -81,6 +83,17 @@ export default function Perfil() {
   const yo = sesion?.user.id
   const [prestador, setPrestador] = useState<MiPrestador | null | undefined>(undefined)
   const [borrando, setBorrando] = useState(false)
+
+  // "Mis negocios" solo aparece si tiene alguno reclamado a su nombre.
+  const [tieneNegocios, setTieneNegocios] = useState(false)
+  useFocusEffect(
+    useCallback(() => {
+      if (!yo) return
+      misNegocios()
+        .then((l) => setTieneNegocios(l.length > 0))
+        .catch(() => setTieneNegocios(false))
+    }, [yo]),
+  )
 
   useFocusEffect(
     useCallback(() => {
@@ -198,6 +211,7 @@ export default function Perfil() {
             texto="Mi currículum y oficios"
             onPress={() => router.push('/editar-curriculum')}
           />
+          {tieneNegocios && <Opcion icono={Store} texto="Mis negocios" onPress={() => router.push('/mis-negocios')} />}
           <InterruptoresUbicacion />
           <Opcion icono={UserRound} texto="Mis datos" onPress={() => router.push('/editar-perfil')} />
           <Opcion icono={Shield} texto="Privacidad" onPress={() => router.push('/privacidad')} />

@@ -1,11 +1,15 @@
 import { router, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Avatar } from '../components/Avatar'
 import { Chip } from '../components/Chip'
 import { Boton, Texto, Titulo } from '../components/ui'
 import { fecha, useCategorias } from '../lib/datos'
 import { MOTIVOS_DENUNCIA } from '../lib/moderacion'
+import {
+  adminBajas, adminReclamos, adminResolverBaja, adminResolverReclamo, diasRestantes, urlInstagram,
+  type BajaAdmin, type ReclamoAdmin,
+} from '../lib/negocios'
 import { useSesion } from '../lib/sesion'
 import { supabase } from '../lib/supabase'
 import { colores, espacio, radio } from '../theme'
@@ -28,7 +32,7 @@ type Denuncia = {
   created_at: string
 }
 
-type Vista = 'pendiente' | 'aprobado' | 'suspendido' | 'denuncias'
+type Vista = 'pendiente' | 'aprobado' | 'suspendido' | 'denuncias' | 'reclamos' | 'bajas'
 
 // Panel de administracion: aprobar prestadores y revisar denuncias.
 // Solo lo ven usuarios con is_admin (la base lo vuelve a chequear).
@@ -38,9 +42,16 @@ export default function Admin() {
   const [vista, setVista] = useState<Vista>('pendiente')
   const [prestadores, setPrestadores] = useState<Prestador[] | null>(null)
   const [denuncias, setDenuncias] = useState<Denuncia[] | null>(null)
+  const [reclamos, setReclamos] = useState<ReclamoAdmin[] | null>(null)
+  const [bajas, setBajas] = useState<BajaAdmin[] | null>(null)
+  const [bajaEstado, setBajaEstado] = useState<'pendiente' | 'confirmada'>('pendiente')
 
   const cargar = useCallback(async () => {
-    if (vista === 'denuncias') {
+    if (vista === 'reclamos') {
+      setReclamos(await adminReclamos().catch(() => []))
+    } else if (vista === 'bajas') {
+      setBajas(await adminBajas(bajaEstado).catch(() => []))
+    } else if (vista === 'denuncias') {
       const { data } = await supabase
         .from('reports')
         .select('id, target_type, target_id, reason, detail, created_at')
@@ -55,7 +66,7 @@ export default function Admin() {
         .order('created_at', { ascending: false })
       setPrestadores((data as unknown as Prestador[]) ?? [])
     }
-  }, [vista])
+  }, [vista, bajaEstado])
 
   useFocusEffect(
     useCallback(() => {
@@ -67,6 +78,39 @@ export default function Admin() {
     const { error } = await supabase.rpc('admin_estado_prestador', { p_user: p.user_id, p_status: nuevo })
     if (error) return Alert.alert('No se pudo', error.message)
     cargar()
+  }
+
+  function resolverReclamo(r: ReclamoAdmin, aprueba: boolean) {
+    Alert.alert(
+      aprueba ? 'Aprobar reclamo' : 'Rechazar reclamo',
+      `${r.negocio_nombre} (@${r.instagram_usuario}) · código ${r.codigo}. ${
+        aprueba ? 'Comprobaste que mandaron el código por mensaje?' : 'Se le avisa a quien lo pidió.'
+      }`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: aprueba ? 'Aprobar' : 'Rechazar',
+          style: aprueba ? 'default' : 'destructive',
+          onPress: async () => {
+            try {
+              await adminResolverReclamo(r.id, aprueba)
+              cargar()
+            } catch (e) {
+              Alert.alert('No se pudo', (e as Error).message)
+            }
+          },
+        },
+      ],
+    )
+  }
+
+  async function resolverBaja(b: BajaAdmin, confirma: boolean) {
+    try {
+      await adminResolverBaja(b.id, confirma)
+      cargar()
+    } catch (e) {
+      Alert.alert('No se pudo', (e as Error).message)
+    }
   }
 
   async function resolver(d: Denuncia, nuevo: 'revisada' | 'descartada') {
@@ -83,7 +127,7 @@ export default function Admin() {
     )
   }
 
-  const lista = vista === 'denuncias' ? denuncias : prestadores
+  const lista = vista === 'reclamos' ? reclamos : vista === 'bajas' ? bajas : vista === 'denuncias' ? denuncias : prestadores
 
   return (
     <ScrollView contentContainerStyle={estilos.contenido}>
@@ -94,6 +138,8 @@ export default function Admin() {
             ['aprobado', 'Aprobados'],
             ['suspendido', 'Suspendidos'],
             ['denuncias', 'Denuncias'],
+            ['reclamos', 'Reclamos'],
+            ['bajas', 'Bajas'],
           ] as const
         ).map(([v, t]) => (
           <Chip
@@ -102,6 +148,8 @@ export default function Admin() {
             onPress={() => {
               setPrestadores(null)
               setDenuncias(null)
+              setReclamos(null)
+              setBajas(null)
               setVista(v)
             }}
           >
@@ -110,10 +158,79 @@ export default function Admin() {
         ))}
       </View>
 
+      {vista === 'bajas' && (
+        <View style={estilos.chips}>
+          {(
+            [
+              ['pendiente', 'Pendientes'],
+              ['confirmada', 'Ocultos'],
+            ] as const
+          ).map(([v, t]) => (
+            <Chip
+              key={v}
+              activo={bajaEstado === v}
+              onPress={() => {
+                setBajas(null)
+                setBajaEstado(v)
+              }}
+            >
+              {t}
+            </Chip>
+          ))}
+        </View>
+      )}
+
       {lista === null ? (
         <ActivityIndicator color={colores.naranjaOscuro} />
       ) : lista.length === 0 ? (
         <Texto suave style={{ textAlign: 'center', marginTop: espacio.xl }}>No hay nada acá.</Texto>
+      ) : vista === 'reclamos' ? (
+        reclamos!.map((r) => (
+          <View key={r.id} style={estilos.tarjeta}>
+            <Titulo nivel={3}>{r.negocio_nombre}</Titulo>
+            <Pressable onPress={() => Linking.openURL(urlInstagram(r.instagram_usuario))}>
+              <Texto fuerte style={{ color: colores.naranjaOscuro }}>@{r.instagram_usuario}</Texto>
+            </Pressable>
+            <Texto>
+              Lo reclama {r.user_nombre} · {r.email}
+            </Texto>
+            <Texto style={estilos.codigo}>{r.codigo}</Texto>
+            <Texto suave style={{ fontSize: 14 }}>
+              Vence en {diasRestantes(r.vence_at)} días · pedido el {fecha(r.created_at)}
+            </Texto>
+            <View style={estilos.acciones}>
+              <Boton variante="secundario" onPress={() => resolverReclamo(r, false)} style={{ flex: 1 }}>
+                Rechazar
+              </Boton>
+              <Boton onPress={() => resolverReclamo(r, true)} style={{ flex: 1 }}>
+                Aprobar
+              </Boton>
+            </View>
+          </View>
+        ))
+      ) : vista === 'bajas' ? (
+        bajas!.map((b) => (
+          <View key={b.id} style={estilos.tarjeta}>
+            <Titulo nivel={3}>{b.negocio_nombre}</Titulo>
+            <Pressable onPress={() => Linking.openURL(urlInstagram(b.instagram_usuario))}>
+              <Texto fuerte style={{ color: colores.naranjaOscuro }}>@{b.instagram_usuario}</Texto>
+            </Pressable>
+            <Texto suave style={{ fontSize: 14 }}>
+              {b.user_nombre ? `Lo pidió ${b.user_nombre}` : 'Lo ocultó el equipo'} · {fecha(b.created_at)}
+            </Texto>
+            {b.motivo ? <Texto>"{b.motivo}"</Texto> : null}
+            <View style={estilos.acciones}>
+              <Boton variante="secundario" onPress={() => resolverBaja(b, false)} style={{ flex: 1 }}>
+                Devolver al mapa
+              </Boton>
+              {bajaEstado === 'pendiente' && (
+                <Boton onPress={() => resolverBaja(b, true)} style={{ flex: 1 }}>
+                  Confirmar
+                </Boton>
+              )}
+            </View>
+          </View>
+        ))
       ) : vista === 'denuncias' ? (
         denuncias!.map((d) => (
           <View key={d.id} style={estilos.tarjeta}>
@@ -184,4 +301,5 @@ const estilos = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: espacio.s },
   tarjeta: { gap: espacio.s, padding: espacio.l, borderRadius: radio.l, borderWidth: 1, borderColor: colores.borde },
   acciones: { flexDirection: 'row', gap: espacio.s, marginTop: espacio.xs },
+  codigo: { fontSize: 32, letterSpacing: 5, textAlign: 'center', paddingVertical: espacio.xs },
 })

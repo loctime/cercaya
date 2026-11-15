@@ -352,3 +352,95 @@ test('bajas: un usuario comun no usa admin_* e invitados rechazan', async () => 
   await rechaza(como(null, 'select pedir_baja_negocio($1, null)', [n]), /permission denied/)
   await rechaza(como(null, `select * from admin_bajas('pendiente')`), /permission denied/)
 })
+
+// ---------------------------------------------------------------- dueño
+
+// Negocio ya reclamado por `dueno` (como lo deja admin_resolver_reclamo).
+async function reclamado(dueno, datos = {}) {
+  const n = await cargar({ ...CERCA, ...datos })
+  await db.sql(`update negocios set estado = 'reclamado', owner_id = $2 where id = $1`, [n, dueno])
+  return n
+}
+
+test('editar_mi_negocio: el dueño cambia nombre, bio, telefono, tipo y ubicacion', async () => {
+  const dueno = await buscador()
+  const n = await reclamado(dueno, { nombre: 'Antes', tipo: 'a_domicilio' })
+  await como(dueno, `select editar_mi_negocio($1, 'Despues S.A.', 'Hacemos de todo', '3407123456', 'local', -33.49, -60.02)`, [n])
+  const f = await db.uno('select nombre, bio, telefono, tipo, lat, lng from negocios where id = $1', [n])
+  assert.deepEqual(
+    { ...f, lat: Number(f.lat), lng: Number(f.lng) },
+    { nombre: 'Despues S.A.', bio: 'Hacemos de todo', telefono: '3407123456', tipo: 'local', lat: -33.49, lng: -60.02 },
+  )
+})
+
+test('editar_mi_negocio: un tercero no puede editar un negocio ajeno', async () => {
+  const dueno = await buscador()
+  const otro = await buscador()
+  const n = await reclamado(dueno)
+  await rechaza(como(otro, `select editar_mi_negocio($1, 'Robado')`, [n]), /no es tuyo/)
+  const sinDueno = await cargar({ ...CERCA })
+  await rechaza(como(otro, `select editar_mi_negocio($1, 'Robado')`, [sinDueno]), /no es tuyo/)
+})
+
+test('editar_mi_negocio: cadena vacia borra el telefono; lat sin lng rechaza', async () => {
+  const dueno = await buscador()
+  const n = await reclamado(dueno, { telefono: '3407000000', bio: 'Algo' })
+  await como(dueno, `select editar_mi_negocio($1, null, '', '')`, [n])
+  const f = await db.uno('select telefono, bio, nombre from negocios where id = $1', [n])
+  assert.equal(f.telefono, null)
+  assert.equal(f.bio, null)
+  assert.ok(f.nombre)
+  await rechaza(como(dueno, `select editar_mi_negocio($1, null, null, null, null, -33.5, null)`, [n]), /ubicación/)
+})
+
+test('ocultar_mi_negocio: oculta, desaparece de negocios_cerca y vuelve a mostrarse', async () => {
+  const dueno = await buscador()
+  const n = await reclamado(dueno, { nombre: 'Plomeria Propia' })
+  assert.ok((await cerca(dueno, 'plomeria propia')).some((x) => x.id === n))
+  await como(dueno, 'select ocultar_mi_negocio($1, true)', [n])
+  assert.ok(!(await cerca(dueno, 'plomeria propia')).some((x) => x.id === n), 'oculto tambien para el dueño')
+  assert.equal((await db.uno('select motivo_oculto from negocios where id = $1', [n])).motivo_oculto, 'dueno')
+  await como(dueno, 'select ocultar_mi_negocio($1, false)', [n])
+  assert.ok((await cerca(dueno, 'plomeria propia')).some((x) => x.id === n))
+  assert.equal((await db.uno('select estado from negocios where id = $1', [n])).estado, 'reclamado')
+})
+
+test('ocultar_mi_negocio: no vuelve a mostrar uno ocultado por el equipo', async () => {
+  const dueno = await buscador()
+  const n = await reclamado(dueno)
+  await db.sql(`update negocios set estado = 'oculto', motivo_oculto = 'admin' where id = $1`, [n])
+  await rechaza(como(dueno, 'select ocultar_mi_negocio($1, false)', [n]), /equipo de CercaYa/)
+  assert.equal((await db.uno('select estado from negocios where id = $1', [n])).estado, 'oculto')
+})
+
+test('borrar la cuenta del dueño deja el negocio oculto, no reclamado sin dueño', async () => {
+  const dueno = await buscador()
+  const n = await reclamado(dueno)
+  await db.sql('delete from profiles where id = $1', [dueno])
+  const f = await db.uno('select estado, motivo_oculto, owner_id from negocios where id = $1', [n])
+  assert.equal(f.owner_id, null)
+  assert.equal(f.estado, 'oculto')
+  assert.equal(f.motivo_oculto, 'cuenta')
+})
+
+test('mis_negocios: lista los propios, incluidos los ocultos, y no los ajenos', async () => {
+  const dueno = await buscador()
+  const otro = await buscador()
+  const propio = await reclamado(dueno, { nombre: 'Mio Visible' })
+  const oculto = await reclamado(dueno, { nombre: 'Mio Oculto' })
+  await como(dueno, 'select ocultar_mi_negocio($1, true)', [oculto])
+  const ajeno = await reclamado(otro, { nombre: 'Ajeno' })
+  const mios = await como(dueno, 'select * from mis_negocios()')
+  const ids = mios.map((x) => x.id)
+  assert.ok(ids.includes(propio) && ids.includes(oculto))
+  assert.ok(!ids.includes(ajeno))
+  assert.equal(mios.find((x) => x.id === oculto).motivo_oculto, 'dueno')
+})
+
+test('dueño: invitados rechazan con permission denied', async () => {
+  const dueno = await buscador()
+  const n = await reclamado(dueno)
+  await rechaza(como(null, `select editar_mi_negocio($1, 'X')`, [n]), /permission denied/)
+  await rechaza(como(null, 'select ocultar_mi_negocio($1, true)', [n]), /permission denied/)
+  await rechaza(como(null, 'select * from mis_negocios()'), /permission denied/)
+})

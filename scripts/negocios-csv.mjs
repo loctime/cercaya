@@ -2,8 +2,8 @@
 // Columnas: instagram,nombre,rubro,tipo,lat,lng,telefono,bio
 
 const COLUMNAS = ['instagram', 'nombre', 'rubro', 'tipo', 'lat', 'lng', 'telefono', 'bio']
-// Entorno de Ramallo: evita cargar un punto en cualquier lado por un error de tipeo.
-const ZONA = { latMin: -33.8, latMax: -33.2, lngMin: -60.2, lngMax: -59.7 }
+// Ramallo y San Nicolás de los Arroyos: evita cargar un punto en cualquier lado por un error de tipeo.
+const ZONA = { latMin: -33.6, latMax: -33.1, lngMin: -60.4, lngMax: -59.8 }
 
 /** Divide un texto CSV en filas de campos. Admite comillas dobles ("" = comilla). */
 function leerFilas(texto) {
@@ -68,7 +68,7 @@ export function parsearCsv(texto, catalogoIds) {
       error('Las coordenadas tienen que ser números'); continue
     }
     if (lat < ZONA.latMin || lat > ZONA.latMax || lng < ZONA.lngMin || lng > ZONA.lngMax) {
-      error('Las coordenadas están fuera de la zona de Ramallo'); continue
+      error('Las coordenadas están fuera de la zona (Ramallo y San Nicolás)'); continue
     }
     if (v.bio && v.bio.length > 300) { error('La bio pasa de 300 caracteres'); continue }
 

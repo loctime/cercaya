@@ -507,3 +507,17 @@ test('revision: admin_negocios busca por nombre o Instagram y solo lo usa un adm
   await rechaza(como(yo, `select * from admin_negocios('pinos')`), /administradores/)
   await rechaza(como(null, `select * from admin_negocios('pinos')`), /permission denied/)
 })
+
+// ---------------------------------------------------------------- rubros nuevos (landings de clientes)
+
+test('catalogo: odontologo y comida artesanal existen y se encuentran por sus sinonimos', async () => {
+  const yo = await buscador()
+  const od = await cargar({ nombre: 'Consultorio Prueba', catalogo: 'odontologo', ...CERCA })
+  const comida = await cargar({ nombre: 'Untables Prueba', catalogo: 'comida-artesanal', ...CERCA })
+  for (const texto of ['dentista', 'odontologa', 'caries']) {
+    assert.ok((await cerca(yo, texto)).some((x) => x.id === od), `"${texto}" encuentra al odontologo`)
+  }
+  for (const texto of ['hummus', 'untables', 'comida casera']) {
+    assert.ok((await cerca(yo, texto)).some((x) => x.id === comida), `"${texto}" encuentra la comida artesanal`)
+  }
+})

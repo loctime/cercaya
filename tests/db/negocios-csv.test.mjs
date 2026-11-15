@@ -53,3 +53,10 @@ test('parsearCsv: una fila mala no impide leer las buenas', () => {
   assert.equal(errores.length, 1)
   assert.equal(errores[0].linea, 2)
 })
+
+test('parsearCsv: acepta San Nicolás de los Arroyos (cliente real fuera de Ramallo)', () => {
+  const csv = CABECERA + 'od.micaelapineiro,Od. Micaela Piñeiro,plomero,local,-33.3345,-60.2250,3364386381,\n'
+  const { filas, errores } = parsearCsv(csv, CATALOGO)
+  assert.deepEqual(errores, [])
+  assert.equal(filas.length, 1)
+})

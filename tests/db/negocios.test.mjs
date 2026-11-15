@@ -444,3 +444,66 @@ test('dueño: invitados rechazan con permission denied', async () => {
   await rechaza(como(null, 'select ocultar_mi_negocio($1, true)', [n]), /permission denied/)
   await rechaza(como(null, 'select * from mis_negocios()'), /permission denied/)
 })
+
+// ---------------------------------------------------------------- arreglos de la revision final
+
+test('revision: devolver una baja de usuario no deshace un ocultamiento del equipo', async () => {
+  const adm = await admin()
+  const yo = await buscador()
+  const n = await cargar({ nombre: 'Plomeria Pisada', ...CERCA })
+  await baja(yo, n, 'competencia')
+  const [bajaPendiente] = (await bajasAdmin(adm, 'pendiente')).filter((x) => x.negocio_id === n)
+  await como(adm, 'select admin_ocultar_negocio($1, $2)', [n, 'El dueño lo pidió por mail'])
+  assert.ok(
+    !(await bajasAdmin(adm, 'pendiente')).some((x) => x.negocio_id === n),
+    'al ocultarlo el equipo se cierran las bajas pendientes del mismo negocio',
+  )
+  // La baja de usuario ya estaba cerrada; igual probamos devolverla a mano.
+  await db.sql(`update negocio_bajas set estado = 'pendiente' where id = $1`, [bajaPendiente.id])
+  await como(adm, 'select admin_resolver_baja($1, false)', [bajaPendiente.id])
+  const f = await db.uno('select estado, motivo_oculto from negocios where id = $1', [n])
+  assert.equal(f.estado, 'oculto', 'sigue oculto')
+  assert.equal(f.motivo_oculto, 'admin')
+  assert.equal((await db.uno('select estado from negocio_bajas where id = $1', [bajaPendiente.id])).estado, 'revertida')
+})
+
+test('revision: si el dueño borra su cuenta con el negocio oculto queda en la cola de bajas', async () => {
+  const adm = await admin()
+  const dueno = await buscador()
+  const n = await reclamado(dueno, { nombre: 'Plomeria Huerfana' })
+  await como(dueno, 'select ocultar_mi_negocio($1, true)', [n])
+  await como(dueno, 'select borrar_mi_cuenta()')
+  const f = await db.uno('select estado, motivo_oculto, owner_id from negocios where id = $1', [n])
+  assert.equal(f.owner_id, null)
+  assert.equal(f.estado, 'oculto')
+  assert.equal(f.motivo_oculto, 'cuenta')
+  const cola = (await bajasAdmin(adm, 'pendiente')).find((x) => x.negocio_id === n)
+  assert.ok(cola, 'aparece en Bajas > Pendientes para que un admin decida')
+  await como(adm, 'select admin_resolver_baja($1, false)', [cola.id])
+  assert.equal((await db.uno('select estado from negocios where id = $1', [n])).estado, 'sin_reclamar')
+})
+
+test('revision: negocios_cerca no muestra el negocio de alguien que te bloqueó (ni al revés)', async () => {
+  const yo = await buscador()
+  const dueno = await buscador()
+  const n = await reclamado(dueno, { nombre: 'Plomeria Del Bloqueador', ...CERCA })
+  assert.ok((await cerca(yo, 'plomeria del bloqueador')).some((x) => x.id === n))
+  await como(dueno, 'insert into blocks (blocker_id, blocked_id) values ($1, $2)', [dueno, yo])
+  assert.ok(!(await cerca(yo, 'plomeria del bloqueador')).some((x) => x.id === n), 'bloqueado por el dueño')
+  const otro = await buscador()
+  await como(otro, 'insert into blocks (blocker_id, blocked_id) values ($1, $2)', [otro, dueno])
+  assert.ok(!(await cerca(otro, 'plomeria del bloqueador')).some((x) => x.id === n), 'el que bloqueó al dueño')
+})
+
+test('revision: admin_negocios busca por nombre o Instagram y solo lo usa un admin', async () => {
+  const adm = await admin()
+  const yo = await buscador()
+  const n = await cargar({ nombre: 'Gomeria Los Pinos', instagram: 'gomeria.lospinos', catalogo: 'plomero', ...CERCA })
+  const porNombre = await como(adm, `select * from admin_negocios('los pinos')`)
+  assert.ok(porNombre.some((x) => x.id === n && x.estado === 'sin_reclamar'))
+  const porInsta = await como(adm, `select * from admin_negocios('@Gomeria.LosPinos')`)
+  assert.ok(porInsta.some((x) => x.id === n))
+  assert.equal((await como(adm, `select * from admin_negocios('zzzzqqqq')`)).length, 0)
+  await rechaza(como(yo, `select * from admin_negocios('pinos')`), /administradores/)
+  await rechaza(como(null, `select * from admin_negocios('pinos')`), /permission denied/)
+})

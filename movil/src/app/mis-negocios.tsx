@@ -1,10 +1,10 @@
+import * as Location from 'expo-location'
 import { useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, View } from 'react-native'
 import { Chip } from '../components/Chip'
 import { Boton, Campo, Texto, Titulo } from '../components/ui'
 import { editarMiNegocio, misNegocios, ocultarMiNegocio, type MiNegocio } from '../lib/negocios'
-import { useUbicacion } from '../lib/ubicacion'
 import { colores, espacio, radio } from '../theme'
 
 // Mis negocios: editar los datos y mostrarlos u ocultarlos del mapa.
@@ -38,7 +38,7 @@ export default function MisNegocios() {
 }
 
 function Formulario({ negocio, alGuardar }: { negocio: MiNegocio; alGuardar: () => void }) {
-  const { origen } = useUbicacion()
+  const [buscandoGps, setBuscandoGps] = useState(false)
   const [nombre, setNombre] = useState(negocio.nombre)
   const [bio, setBio] = useState(negocio.bio ?? '')
   const [telefono, setTelefono] = useState(negocio.telefono ?? '')
@@ -57,6 +57,24 @@ function Formulario({ negocio, alGuardar }: { negocio: MiNegocio; alGuardar: () 
       Alert.alert('No se pudo', (e as Error).message)
     } finally {
       setGuardando(false)
+    }
+  }
+
+  // GPS real de este momento (no la zona elegida a mano ni una ubicación vieja guardada).
+  async function usarMiUbicacion() {
+    setBuscandoGps(true)
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Necesitamos tu ubicación', 'Activá el permiso de ubicación para marcar dónde está tu negocio.')
+        return
+      }
+      const p = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+      setPos({ lat: p.coords.latitude, lng: p.coords.longitude })
+    } catch {
+      Alert.alert('No pudimos ubicarte', 'Probá de nuevo en un lugar con mejor señal.')
+    } finally {
+      setBuscandoGps(false)
     }
   }
 
@@ -102,9 +120,14 @@ function Formulario({ negocio, alGuardar }: { negocio: MiNegocio; alGuardar: () 
           ? 'Como vas a domicilio, mostramos tu ubicación aproximada y no tu teléfono.'
           : 'Se muestra el pin del local y tu teléfono.'}
       </Texto>
-      <Boton variante="secundario" onPress={() => setPos({ lat: origen.lat, lng: origen.lng })}>
+      <Boton variante="secundario" cargando={buscandoGps} onPress={usarMiUbicacion}>
         {pos ? 'Ubicación actual elegida' : 'Usar mi ubicación actual'}
       </Boton>
+      {pos && (
+        <Texto suave style={{ fontSize: 14 }}>
+          Se va a guardar el punto donde estás ahora ({pos.lat.toFixed(4)}, {pos.lng.toFixed(4)}). Tenés que estar en el negocio.
+        </Texto>
+      )}
       <Boton cargando={guardando} onPress={guardar}>
         Guardar
       </Boton>

@@ -3,12 +3,13 @@ import { useCallback, useState } from 'react'
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Avatar } from '../components/Avatar'
 import { Chip } from '../components/Chip'
-import { Boton, Texto, Titulo } from '../components/ui'
+import { Boton, Campo, Texto, Titulo } from '../components/ui'
 import { fecha, useCategorias } from '../lib/datos'
 import { MOTIVOS_DENUNCIA } from '../lib/moderacion'
 import {
-  adminBajas, adminReclamos, adminResolverBaja, adminResolverReclamo, diasRestantes, urlInstagram,
-  type BajaAdmin, type ReclamoAdmin,
+  adminBajas, adminBuscarNegocios, adminOcultarNegocio, adminReclamos, adminResolverBaja, adminResolverReclamo,
+  diasRestantes, urlInstagram,
+  type BajaAdmin, type NegocioAdmin, type ReclamoAdmin,
 } from '../lib/negocios'
 import { useSesion } from '../lib/sesion'
 import { supabase } from '../lib/supabase'
@@ -32,7 +33,83 @@ type Denuncia = {
   created_at: string
 }
 
-type Vista = 'pendiente' | 'aprobado' | 'suspendido' | 'denuncias' | 'reclamos' | 'bajas'
+type Vista = 'pendiente' | 'aprobado' | 'suspendido' | 'denuncias' | 'reclamos' | 'bajas' | 'negocios'
+
+const ESTADO_NEGOCIO = { sin_reclamar: 'Sin reclamar', reclamado: 'Reclamado', oculto: 'Oculto' } as const
+
+// Buscar un negocio por nombre o Instagram y ocultarlo a mano (pedidos por mail o mensaje directo).
+function BuscarNegocios() {
+  const [texto, setTexto] = useState('')
+  const [lista, setLista] = useState<NegocioAdmin[] | null>(null)
+  const [buscando, setBuscando] = useState(false)
+
+  async function buscar() {
+    setBuscando(true)
+    try {
+      setLista(await adminBuscarNegocios(texto))
+    } catch (e) {
+      Alert.alert('No se pudo', (e as Error).message)
+    } finally {
+      setBuscando(false)
+    }
+  }
+
+  function ocultar(n: NegocioAdmin) {
+    Alert.alert('Ocultar negocio', `${n.nombre} (@${n.instagram_usuario}) sale del mapa para todos.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Ocultar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await adminOcultarNegocio(n.id, 'Pedido por mail o mensaje')
+            buscar()
+          } catch (e) {
+            Alert.alert('No se pudo', (e as Error).message)
+          }
+        },
+      },
+    ])
+  }
+
+  return (
+    <View style={{ gap: espacio.m }}>
+      <Campo
+        etiqueta="Nombre o Instagram"
+        value={texto}
+        onChangeText={setTexto}
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+        onSubmitEditing={buscar}
+      />
+      <Boton cargando={buscando} deshabilitado={texto.trim().length < 2} onPress={buscar}>
+        Buscar
+      </Boton>
+      {lista !== null && lista.length === 0 && (
+        <Texto suave style={{ textAlign: 'center' }}>No encontramos nada.</Texto>
+      )}
+      {lista?.map((n) => (
+        <View key={n.id} style={estilos.tarjeta}>
+          <Titulo nivel={3}>{n.nombre}</Titulo>
+          <Pressable onPress={() => Linking.openURL(urlInstagram(n.instagram_usuario))}>
+            <Texto fuerte style={{ color: colores.naranjaOscuro }}>@{n.instagram_usuario}</Texto>
+          </Pressable>
+          <Texto suave style={{ fontSize: 14 }}>{ESTADO_NEGOCIO[n.estado]}</Texto>
+          {n.estado !== 'oculto' ? (
+            <Boton variante="peligro" onPress={() => ocultar(n)}>
+              Ocultar del mapa
+            </Boton>
+          ) : (
+            <Texto suave style={{ fontSize: 14 }}>
+              Para devolverlo al mapa: pestaña Bajas &gt; Ocultos.
+            </Texto>
+          )}
+        </View>
+      ))}
+    </View>
+  )
+}
 
 // Panel de administracion: aprobar prestadores y revisar denuncias.
 // Solo lo ven usuarios con is_admin (la base lo vuelve a chequear).
@@ -140,6 +217,7 @@ export default function Admin() {
             ['denuncias', 'Denuncias'],
             ['reclamos', 'Reclamos'],
             ['bajas', 'Bajas'],
+            ['negocios', 'Negocios'],
           ] as const
         ).map(([v, t]) => (
           <Chip
@@ -180,7 +258,9 @@ export default function Admin() {
         </View>
       )}
 
-      {lista === null ? (
+      {vista === 'negocios' ? (
+        <BuscarNegocios />
+      ) : lista === null ? (
         <ActivityIndicator color={colores.naranjaOscuro} />
       ) : lista.length === 0 ? (
         <Texto suave style={{ textAlign: 'center', marginTop: espacio.xl }}>No hay nada acá.</Texto>

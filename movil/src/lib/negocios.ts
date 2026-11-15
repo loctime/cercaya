@@ -104,3 +104,16 @@ export const adminBajas = async (estado: 'pendiente' | 'confirmada') =>
 export const adminResolverBaja = async (id: string, confirma: boolean) => {
   await rpc('admin_resolver_baja', { p_baja: id, p_confirma: confirma })
 }
+
+export type NegocioAdmin = {
+  id: string
+  nombre: string
+  instagram_usuario: string
+  estado: 'sin_reclamar' | 'reclamado' | 'oculto'
+  motivo_oculto: 'baja' | 'dueno' | 'admin' | 'cuenta' | null
+}
+export const adminBuscarNegocios = async (texto: string) =>
+  (await rpc<NegocioAdmin[] | null>('admin_negocios', { p_texto: texto })) ?? []
+export const adminOcultarNegocio = async (id: string, motivo?: string) => {
+  await rpc('admin_ocultar_negocio', { p_negocio: id, p_motivo: motivo ?? null })
+}

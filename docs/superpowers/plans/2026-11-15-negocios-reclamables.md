@@ -301,7 +301,7 @@ git commit -m "feat(negocios): capa de la app para negocios"
 
 - [ ] **Step 6: Verificar tipos y pruebas** — `cd movil && npm run typecheck && npm test`. Expected: sin errores. Después `npx expo export --platform android` para comprobar que compila el paquete.
 
-- [ ] **Step 7: Probar en pantalla contra producción** (después de aplicar las migraciones 0116–0119, Task 9): cargar 3 negocios de prueba con el script (un `local` con teléfono, un `a_domicilio`, uno con rubro distinto), abrir la app, modo Trabajo, buscar el rubro, comprobar: pin distinto, el `a_domicilio` no muestra teléfono, "Es mío" muestra el código, "sacalo" lo hace desaparecer. Capturas de pantalla para Diego.
+- [ ] **Step 7: Probar en pantalla contra producción** (después de aplicar las migraciones 0116–0120, Task 9): cargar 3 negocios de prueba con el script (un `local` con teléfono, un `a_domicilio`, uno con rubro distinto), abrir la app, modo Trabajo, buscar el rubro, comprobar: pin distinto, el `a_domicilio` no muestra teléfono, "Es mío" muestra el código, "sacalo" lo hace desaparecer. Capturas de pantalla para Diego.
 
 - [ ] **Step 8: Commit**
 
@@ -354,7 +354,7 @@ git commit -m "feat(negocios): pestañas de reclamos y bajas en administracion"
 
 - [ ] **Step 2: `app/soporte/page.tsx`** — agregar "Quiero sacar o reclamar mi negocio": los dos caminos (en la app: botón en la ficha; sin cuenta: mail o DM a `@cercaya`) y que sacarlo es inmediato apenas lo recibimos. Verificar con `npm run build` en la raíz (o `npx tsc --noEmit`) que la web compila.
 
-- [ ] **Step 3 (pedir ok): Aplicar las migraciones 0116–0119 a producción** por la Management API (como se hizo con 0109–0115; helper `.tmp/q.mjs`), una por una, en orden, y comprobar con una consulta de solo lectura que existen las tablas y funciones, y que `anon` no tiene permisos (`select has_table_privilege('anon','public.negocios','select')` → `false`).
+- [ ] **Step 3 (pedir ok): Aplicar las migraciones 0116–0120 a producción** por la Management API (como se hizo con 0109–0115; helper `.tmp/q.mjs`), una por una, en orden, y comprobar con una consulta de solo lectura que existen las tablas y funciones, y que `anon` no tiene permisos (`select has_table_privilege('anon','public.negocios','select')` → `false`).
 
 - [ ] **Step 4 (pedir ok): Cargar los primeros negocios** — Diego pasa la planilla; correr `node scripts/cargar_negocios.mjs <csv>` en modo prueba, mostrar el resumen, y con su ok `--aplicar`.
 
@@ -362,7 +362,7 @@ git commit -m "feat(negocios): pestañas de reclamos y bajas en administracion"
 
 - [ ] **Step 6 (pedir ok): Publicar la web** — `npx vercel@latest deploy --prod --yes --token $VERCEL_TOKEN` desde la raíz del worktree, y abrir `/privacidad` y `/soporte` para comprobar el texto nuevo.
 
-- [ ] **Step 7: Registrar en `CLAUDE.local.md`** una sección "NEGOCIOS RECLAMABLES (15/11/2026)": rama `negocios` y worktree, migraciones 0116–0119, cómo cargar con el script, cuenta `@cercaya`, qué queda para después (entrar con Instagram, enriquecer con Business Discovery, fotos), y el gotcha de que la rama sale de `encuentro`. Commit y push (`env -u GITHUB_TOKEN git push`).
+- [ ] **Step 7: Registrar en `CLAUDE.local.md`** una sección "NEGOCIOS RECLAMABLES (15/11/2026)": rama `negocios` y worktree, migraciones 0116–0120, cómo cargar con el script, cuenta `@cercaya`, qué queda para después (entrar con Instagram, enriquecer con Business Discovery, fotos), y el gotcha de que la rama sale de `encuentro`. Commit y push (`env -u GITHUB_TOKEN git push`).
 
 ```bash
 git add app CLAUDE.local.md
